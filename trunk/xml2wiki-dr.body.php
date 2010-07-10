@@ -1,5 +1,5 @@
 <?php
-require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'config.php');
+require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'config.php');
 
 /**
 * @class Xml2Wiki
@@ -7,25 +7,28 @@ require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'config.php');
 class Xml2Wiki {
 	protected static	$_Instance   = NULL;
 	protected static	$_Properties = array(
-						'name'            => 'DR XML2Wiki',
+						'name'            => 'Xml2Wiki',
 						'version'         => '0.1b',
 						'date'            => '2010-07-06',
 						'_description'    => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags.",
-						'description'     => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags.<sup>[{{SERVER}}{{SCRIPTPATH}}/extensions/xml2wiki-dr/xml2wiki.php?info more]</sup>",
-						'descriptionmsg'  => 'drxml2wiki-desc',
+						'description'     => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags.<sup>[{{SERVER}}{{SCRIPTPATH}}/extensions/xml2wiki-dr/xml2wiki-dr.php?info more]</sup>",
+						'descriptionmsg'  => 'xml2wiki-desc',
 						'author'          => array('Alejandro Darío Simi'),
-						'url'             => 'http://wiki.daemonraco.com/wiki/DR_XML2Wiki',
+						'url'             => 'http://wiki.daemonraco.com/wiki/xml2wiki-dr',
 					);
 
 	protected static	$ERROR_PREFIX = 'DR_XML2Wiki Error: ';
 
 	protected	$_data;
+	protected	$_class;
 	protected	$_filename;
 	protected	$_localDirectory;
 	protected	$_style;
 	protected	$_showAttrs;
 	protected	$_translations;
 	protected	$_translator;
+
+	protected	$_auxTableData;
 
 	protected	$_lastError;
 
@@ -73,7 +76,7 @@ class Xml2Wiki {
 			if(!$out) {
 				if(is_readable($filepath)) {
 					$this->_data = file_get_contents($filepath);
-					switch($this->_style) {
+					switch(strtolower($this->_style)) {
 						case 'code':
 							$out = $this->showAsCode();
 							break;
@@ -85,12 +88,10 @@ class Xml2Wiki {
 							$out = $this->showAsPre();
 							break;
 						case 'list':
-							$this->_lastError = "";
-							if($this->checkSimpleXML()) {
-								$out = $this->showAsList();
-							} else {
-								$out = $this->_lastError;
-							}
+							$out = $this->showAsList();
+							break;
+						case 'table':
+							$out = $this->showAsTable();
 							break;
 						default:
 							$out = $this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Unknown style '{$this->_style}'.</span>";
@@ -202,13 +203,21 @@ class Xml2Wiki {
 	}
 
 	protected function clear() {
+		if(isset($this->_auxTableData)) {
+			unset($this->_auxTableData);
+		}
 		if(isset($this->_translations)) {
 			unset($this->_translations['tags']);
 			unset($this->_translations['attrs']);
 			unset($this->_translations);
 		}
 
+		$this->_auxTableData = array(
+						'maxcols' => 0,
+						'maxrows' => 0
+					);
 		$this->data          = '';
+		$this->_class        = '';
 		$this->_filename     = '';
 		$this->_lastError    = '';
 		$this->_showAttrs    = false;
@@ -224,10 +233,11 @@ class Xml2Wiki {
 
 		return (in_array($path, $wgXML2WikiAllowdPaths) || in_array(dirname($path), $wgXML2WikiAllowdPaths));
 	}
-	
+
 	protected function loadTranslations($filepath) {
 		$out = "";
 
+		$this->_lastError = "";
 		if($this->checkSimpleXML()) {
 			$xml = simplexml_load_file($filepath);
 			if($xml->getName() == 'translations') {
@@ -284,22 +294,29 @@ class Xml2Wiki {
 		return "<div class=\"Xml2Wiki_direct\">".htmlspecialchars($this->_data)."</div>";
 	}
 	protected function showAsList() {
-		$out = "<div class=\"Xml2Wiki_list\">\n";
+		$out = "";
 
-		$xml = simplexml_load_string($this->_data);
-		$out.= "\t<span class=\"MainItem\">".$this->translate($xml->getName())."</span><ul>\n";
+		$this->_lastError = "";
+		if($this->checkSimpleXML()) {
+			$out = "<div class=\"Xml2Wiki_list\">\n";
 
-		if(count($xml->children())) {
-			foreach($xml->children() as $child) {
-				$out.= $this->showAsListChild($child);
+			$xml = simplexml_load_string($this->_data);
+			$out.= "\t<span class=\"MainItem\">".$this->translate($xml->getName())."</span><ul>\n";
+
+			if(count($xml->children())) {
+				foreach($xml->children() as $child) {
+					$out.= $this->showAsListChild($child);
+				}
 			}
+
+			unset($xml);
+
+			$out.= "\t</ul>\n";
+			$out.= "</div>\n";
+		} else {
+			$out = $this->_lastError;
 		}
 
-		unset($xml);
-
-		$out.= "\t</ul>\n";
-		$out.= "</div>\n";
-		
 		return $out;
 	}
 	protected function showAsListChild(&$child, $level=1, $space="\t\t") {
@@ -336,11 +353,37 @@ class Xml2Wiki {
 			}
 			$out.= "{$space}</li>\n";
 		}
-		
+
 		return $out;
 	}
 	protected function showAsPre() {
 		return "<div class=\"Xml2Wiki_pre\"><pre>".htmlspecialchars($this->_data)."</pre></div>";
+	}
+	protected function showAsTable() {
+		$out = "";
+
+		$this->_lastError = "";
+		if($this->checkSimpleXML()) {
+			$out = "<div class=\"Xml2Wiki_table\">\n";
+			$out = "\t<table class=\"{$this->_class}\">\n";
+
+			$xml = simplexml_load_string($this->_data);
+/* 			$out.= "\t<span class=\"MainItem\">".$this->translate($xml->getName())."</span><ul>\n";
+
+			if(count($xml->children())) {
+				foreach($xml->children() as $child) {
+					$out.= $this->showAsListChild($child);
+				}
+			}*/
+			unset($xml);
+
+			$out = "\t/<table>\n";
+			$out.= "</div>\n";
+		} else {
+			$out = $this->_lastError;
+		}
+
+		return $out;
 	}
 
 	/**
@@ -351,7 +394,8 @@ class Xml2Wiki {
 	protected function getVariable($input, $name, $isNumber=false) {
 		$defaults = array(
 			'file'		=> '',		//! file to parse and transform.
-			'showattrs'	=> 'off',	//! tag translator XML.
+			'class'         => 'wikitable',	//!
+			'showattrs'	=> 'off',	//!
 			'style'		=> 'pre',	//! parsing style.
 			'translator'	=> '',		//! tag translator XML.
 		);
@@ -399,7 +443,7 @@ class Xml2Wiki {
 			}
 		}
 		if(!$found) {
-			$this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Module SimpleXML is required (<a target=\"_blank\" href=\"extensions/xml2wiki-dr/xml2wiki.php?modules=SimpleXML\">check module status</a>)</span>";
+			$this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Module SimpleXML is required (<a target=\"_blank\" href=\"extensions/xml2wiki-dr/xml2wiki-dr.php?modules=SimpleXML\">check module status</a>)</span>";
 			$out = false;
 		}
 
@@ -419,41 +463,6 @@ class Xml2Wiki {
 		}
 		return Xml2Wiki::$_Properties[$name];
 	}
-}
-
-/**
- * Register function.
- */
-function Xml2Wiki_Hooker() {
-	Xml2Wiki::Instance();
-}
-
-if(!defined('MEDIAWIKI')) {
-	if(isset($_REQUEST['modules'])) {
-		Xml2Wiki::Instance()->modulesCheck();
-	} elseif(isset($_REQUEST['info'])) {
-		Xml2Wiki::Instance()->showInfo();
-	} else {
-		die();
-	}
-} else {
-	/**
-	 * MediaWiki Extension hooks Setter.
-	 */
-	$wgExtensionFunctions[] = 'Xml2Wiki_Hooker';
-
-	/**
-	 * MediaWiki Extension Description.
-	 */
-	$wgExtensionCredits['parserhook'][] = array(
-		'name'            => Xml2Wiki::Property('name'),
-		'version'         => Xml2Wiki::Property('version'),
-		'date'            => Xml2Wiki::Property('date'),
-		'description'     => Xml2Wiki::Property('description'),
-		'author'          => Xml2Wiki::Property('author'),
-		'url'             => Xml2Wiki::Property('url'),
-	);
-
 }
 
 ?>
