@@ -1,9 +1,17 @@
 <?php
+/**
+ * @file xml2wiki-dr.body.php
+ *
+ * Subversion
+ *	- ID:  $Id$
+ *	- URL: $URL$
+ */
+
 require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'config.php');
 
 /**
-* @class Xml2Wiki
-*/
+ * @class Xml2Wiki
+ */
 class Xml2Wiki {
 	protected static	$_Instance   = NULL;
 	protected static	$_Properties = array(
@@ -15,7 +23,7 @@ class Xml2Wiki {
 						'descriptionmsg'  => 'xml2wiki-desc',
 						'author'          => array('Alejandro Darío Simi'),
 						'url'             => 'http://wiki.daemonraco.com/wiki/xml2wiki-dr',
-					);
+	);
 
 	protected static	$ERROR_PREFIX = 'DR_XML2Wiki Error: ';
 
@@ -27,6 +35,13 @@ class Xml2Wiki {
 	protected	$_showAttrs;
 	protected	$_translations;
 	protected	$_translator;
+	protected	$_varDefaults = array(
+				'file'		=> '',		//! file to parse and transform.
+				'class'         => 'wikitable',	//!
+				'showattrs'	=> 'off',	//!
+				'style'		=> 'pre',	//! parsing style.
+				'translator'	=> '',		//! tag translator XML.
+	);
 
 	protected	$_auxTableData;
 
@@ -37,8 +52,19 @@ class Xml2Wiki {
 
 		$this->_localDirectory = dirname(__FILE__);
 
+		/*
+		 * Loading messages.
+		 */
+		wfLoadExtensionMessages('xml2wiki');
+
+		/*
+		 * Clearing status.
+		 */
 		$this->clear();
 
+		/*
+		 * Setting tag-kooks.
+		 */
 		if(defined('MEDIAWIKI')) {
 			global	$wgParser;
 			$wgParser->setHook('xml2wiki', array(&$this, 'parse'));
@@ -54,11 +80,7 @@ class Xml2Wiki {
 		global	$wgUploadDirectory;
 
 		$this->clear();
-
-		$this->_filename   = $this->getVariable($input, 'file',       false);
-		$this->_translator = $this->getVariable($input, 'translator', false);
-		$this->_style      = $this->getVariable($input, 'style',      false);
-		$this->_showAttrs  = (strtolower($this->getVariable($input, 'showattrs', false)) == 'on');
+		$this->loadVariables($input);
 
 		if($this->_filename) {
 			$filepath = $this->getFilePath($this->_filename);
@@ -94,14 +116,14 @@ class Xml2Wiki {
 							$out = $this->showAsTable();
 							break;
 						default:
-							$out = $this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Unknown style '{$this->_style}'.</span>";
+							$out = $this->_lastError = $this->formatErrorMessage(wfMsg('unknown-style',$this->_style));
 					}
 				} else {
-					$out = $this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Unable to read '$filepath'</span>";
+					$out = $this->_lastError = $this->formatErrorMessage(wfMsg('forbbidenfile',$filepath));
 				}
 			}
 		} else {
-			$out = $this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Filename not specified</span>";
+			$out = $this->_lastError = $this->formatErrorMessage(wfMsg('nofilename'));
 		}
 
 		return $out;
@@ -189,13 +211,13 @@ class Xml2Wiki {
 			if($obj) {
 				$out = $wgUploadDirectory.DIRECTORY_SEPARATOR.$obj->getRel();
 			} else {
-				$this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Unable to read wiki file '{$aux[1]}'</span>";
+				$this->_lastError = $this->formatErrorMessage(wfMsg('forbbidenwfile',$aux[1]));
 			}
 		} else {
 			if($this->checkAllowPath($in)) {
 				$out = $in;
 			} else {
-				$this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Path {$in} is not allowed. Please check variable \$wgXML2WikiAllowdPaths in your system configuration'</span>";
+				$this->_lastError = $this->formatErrorMessage(wfMsg('notallowedpath',$in));
 			}
 		}
 
@@ -213,9 +235,10 @@ class Xml2Wiki {
 		}
 
 		$this->_auxTableData = array(
-						'maxcols' => 0,
-						'maxrows' => 0
-					);
+						'maxcols' => 1,
+						'maxrows' => 1,
+						'cells'   => array()
+		);
 		$this->data          = '';
 		$this->_class        = '';
 		$this->_filename     = '';
@@ -224,8 +247,18 @@ class Xml2Wiki {
 		$this->_translations = array(
 						'tags'  => array(),
 						'attrs' => array()
-					);
+		);
 		$this->_translator   = '';
+	}
+
+	protected function loadVariables($input) {
+		$this->_class      = $this->getVariable($input, 'class');
+		$this->_filename   = $this->getVariable($input, 'file');
+		$this->_translator = $this->getVariable($input, 'translator');
+		$this->_style      = $this->getVariable($input, 'style');
+
+		$aux = strtolower($this->getVariable($input, 'showattrs'));
+		$this->_showAttrs = ($aux == 'on');
 	}
 
 	protected function checkAllowPath($path) {
@@ -248,16 +281,16 @@ class Xml2Wiki {
 						} elseif(isset($t->attribute) && isset($t->means)) {
 							$this->_translations['attrs']["{$t->attribute}"] = "{$t->means}";
 						} else {
-							$out = $this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Bad formed translation XML</a></span>";
+							$out = $this->_lastError = $this->formatErrorMessage(wfMsg('badtxml'));
 							break;
 						}
 					} else {
-						$out = $this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Bad formed translation XML. Unknown tag '".$xml->getName()."'</a></span>";
+						$out = $this->_lastError = $this->formatErrorMessage(wfMsg('badtxml',$t->getName()));
 						break;
 					}
 				}
 			} else {
-				$out = $this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Bad formed translation XML. Unknown tag '".$xml->getName()."'</a></span>";
+				$out = $this->_lastError = $this->formatErrorMessage(wfMsg('badtxml',$xml->getName()));
 			}
 			unset($xml);
 		} else {
@@ -282,7 +315,7 @@ class Xml2Wiki {
 		}
 
 		if(!$tag) {
-			$out = $this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Style 'code' requires <a target=\"_blank\" href=\"http://www.mediawiki.org/wiki/Extension:SyntaxHighlight\">SyntaxHighlight Extension</a></span>";
+			$out = $this->_lastError = $this->formatErrorMessage(wfMsg('stylecode-extension'));
 		} else {
 			$out = $wgParser->recursiveTagParse("<$tag lang=\"xml\">{$this->_data}</$tag>");
 			$out = "<div class=\"Xml2Wiki_code\">".$out."</div>";
@@ -364,26 +397,117 @@ class Xml2Wiki {
 
 		$this->_lastError = "";
 		if($this->checkSimpleXML()) {
-			$out = "<div class=\"Xml2Wiki_table\">\n";
-			$out = "\t<table class=\"{$this->_class}\">\n";
+			$out.= "<div class=\"Xml2Wiki_table\">\n";
+			$out.= "\t<table class=\"{$this->_class}\">\n";
 
-			$xml = simplexml_load_string($this->_data);
-/* 			$out.= "\t<span class=\"MainItem\">".$this->translate($xml->getName())."</span><ul>\n";
-
-			if(count($xml->children())) {
-				foreach($xml->children() as $child) {
-					$out.= $this->showAsListChild($child);
+			$xml  = simplexml_load_string($this->_data);
+			$tree = $this->showAsTableChild($xml);
+			$aux  = $this->showAsTableTreeDig($tree);
+			$this->_auxTableData['maxrows'] = $tree['rows'];
+			$out.= "\t\t<tr>\n";
+			$out.= "\t\t\t<th colspan=\"{$this->_auxTableData['maxcols']}\">".$this->translate($xml->getName())."</th>\n";
+			$out.= "\t\t</tr>\n";
+			for($y=1; $y<=$this->_auxTableData['maxrows']; $y++) {
+				$out.= "\t\t<tr>\n";
+				for($x=1, $colSpan=$this->_auxTableData['maxcols']; $x<=$this->_auxTableData['maxcols']; $x++, $colSpan--) {
+					$id     = "{$x}-{$y}";
+					if(isset($this->_auxTableData['cells'][$id])) {
+						$cell = $this->_auxTableData['cells'][$id];
+						if(isset($cell['value'])) {
+							$out.= "\t\t\t<th rowspan=\"{$cell['rows']}\">{$cell['title']}</th>\n";
+							$out.= "\t\t\t<td colspan=\"".($colSpan-1)."\">{$cell['value']}</td>\n";
+						} elseif(isset($cell['nochildren'])) {
+							$out.= "\t\t\t<td class=\"NoText\" colspan=\"2\" rowspan=\"{$cell['rows']}\">{$cell['title']}</td>\n";
+						} else {
+							$out.= "\t\t\t<th rowspan=\"{$cell['rows']}\">{$cell['title']}</th>\n";
+						}
+					}
 				}
-			}*/
+				$out.= "\t\t</tr>\n";
+			}
 			unset($xml);
 
-			$out = "\t/<table>\n";
+			$out.= "\t</table>\n";
 			$out.= "</div>\n";
 		} else {
 			$out = $this->_lastError;
 		}
 
 		return $out;
+	}
+	protected function showAsTableChild(&$child, $level=1, $space="\t\t") {
+		$tree = array(
+				'level' => $level,
+				'space' => $space,
+				'title' => $this->translate($child->getName())
+		);
+		if(count($child->children())) {
+			foreach($child->children() as $c) {
+				$aux = $this->showAsTableChild($c, $level+1, $space."\t");
+				$tree[] = $aux;
+			}
+		} else {
+			$value  = "{$child}";
+			if($value) {
+				$tree[] = $value;
+			}
+		}
+
+		return $tree;
+	}
+	protected function showAsTableTreeDig(&$tree, $maxcols=0, &$x=0, &$y=1) {
+		$maxcols++;
+		if($this->_auxTableData['maxcols'] < $maxcols) {
+			$this->_auxTableData['maxcols'] = $maxcols;
+		}
+
+		$tree['x'] = $x;
+		$tree['y'] = $y;
+		$cellId    = "{$tree['x']}-{$tree['y']}";
+		$this->_auxTableData['cells'][$cellId] = array();
+
+		$cols        = 0;
+		$rows        = 0;
+		$hasNumerics = false;
+		foreach($tree as $k => $c) {
+			if(is_numeric($k)) {
+				$rows++;
+				$hasNumerics = true;
+				if(is_array($c)) {
+					$x++;
+					$r = $this->showAsTableTreeDig($c, $maxcols, $x, $y);
+					$y++;
+					$x--;
+					$tree[$k] = $c;
+
+					if($r > 1) {
+						$rows+=$r-1;
+					}
+				}
+			}
+		}
+		if(!$hasNumerics) {
+			$cols = 2;
+			$rows = 1;
+			$y--;
+			$tree['nochildren'] = 'NOCHILDREN';
+			$this->_auxTableData['cells'][$cellId]['nochildren'] = 'NOCHILDREN';
+		} else {
+			if(!is_array($tree[0])) {
+				$this->_auxTableData['cells'][$cellId]['value'] = "{$tree[0]}";
+			}
+			$cols = 1;
+		}
+		$tree['cols'] = $cols;
+		$tree['rows'] = $rows;
+
+		$this->_auxTableData['cells'][$cellId]['title'] = $tree['title'];
+		$this->_auxTableData['cells'][$cellId]['cols']  = $tree['cols'];
+		$this->_auxTableData['cells'][$cellId]['rows']  = $tree['rows'];
+		$this->_auxTableData['cells'][$cellId]['level'] = $tree['level'];
+		$this->_auxTableData['cells'][$cellId]['space'] = $tree['space'];
+
+		return $rows;
 	}
 
 	/**
@@ -392,16 +516,8 @@ class Xml2Wiki {
 	 *	use '' or 0 if Default not provided
 	 */
 	protected function getVariable($input, $name, $isNumber=false) {
-		$defaults = array(
-			'file'		=> '',		//! file to parse and transform.
-			'class'         => 'wikitable',	//!
-			'showattrs'	=> 'off',	//!
-			'style'		=> 'pre',	//! parsing style.
-			'translator'	=> '',		//! tag translator XML.
-		);
-
-		if(isset($defaults[$name])) {
-			$out = $defaults[$name];
+		if(isset($this->_varDefaults[$name])) {
+			$out = $this->_varDefaults[$name];
 		} else {
 			$out = ($isNumber) ? 0 : '';
 		}
@@ -443,11 +559,15 @@ class Xml2Wiki {
 			}
 		}
 		if(!$found) {
-			$this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Module SimpleXML is required (<a target=\"_blank\" href=\"extensions/xml2wiki-dr/xml2wiki-dr.php?modules=SimpleXML\">check module status</a>)</span>";
+			$this->_lastError = $this->formatErrorMessage(wfMsg('simplexml-required'));
 			$out = false;
 		}
 
 		return $out;
+	}
+
+	protected function formatErrorMessage($message) {
+		return "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."$message</span>";
 	}
 
 	public static function Instance() {

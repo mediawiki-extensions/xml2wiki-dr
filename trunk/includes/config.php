@@ -1,7 +1,15 @@
 <?php
 /**
-* Arrays.
-*/
+ * @file config.php
+ *
+ * Subversion
+ *	- ID:  $Id$
+ *	- URL: $URL$
+ */
+
+/**
+ * Arrays.
+ */
 if(!isset($wgXML2WikiAllowdPaths)) {
 	$wgXML2WikiAllowdPaths = array();
 }
@@ -10,18 +18,18 @@ if(!isset($wgXML2WikiConfig)) {
 }
 
 /**
-* Allowed Directories.
-*/
+ * Allowed Directories.
+ */
 $wgXML2WikiAllowdPaths[] = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR.'xmls';
 
 /**
-* Configuration.
-* @{
-*/
+ * Configuration.
+ * @{
+ */
 /**
-* Information
-*	@{
-*/
+ * Information
+ *	@{
+ */
 $wgXML2WikiConfig['showallowpaths'] = true;
 $wgXML2WikiConfig['showinstalldir'] = true;
 $wgXML2WikiConfig['showsysinfo']    = true;
@@ -29,9 +37,9 @@ $wgXML2WikiConfig['showmodules']    = true;
 /**	@} */
 
 /**
-* Messages
-*	@{
-*/
+ * Messages
+ *	@{
+ */
 $wgXML2WikiConfig['attributesprefix']      = '@';
 $wgXML2WikiConfig['attributessuffix']      = '@';
 $wgXML2WikiConfig['transattributesprefix'] = '@';
