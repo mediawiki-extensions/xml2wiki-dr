@@ -1,10 +1,4 @@
 <?php
-/**
-* List of allowed Paths.
-*/
-if(!isset($wgXML2WikiAllowdPaths)) {
-	$wgXML2WikiAllowdPaths = array();
-}
 require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'config.php');
 
 /**
@@ -113,26 +107,41 @@ class Xml2Wiki {
 	}
 
 	public function modulesCheck() {
-		$mods = get_loaded_extensions();
-		if($_REQUEST['modules']) {
-			$mod = $_REQUEST['modules'];
-			echo "Module {$mod}... ";
-			if(in_array($mod, $mods)) {
-				echo "Ok\n";
+		global	$wgXML2WikiConfig;
+		if($wgXML2WikiConfig['showmodules']) {
+			$mods = get_loaded_extensions();
+			if($_REQUEST['modules']) {
+				$mod   = $_REQUEST['modules'];
+				echo "Module {$mod}... ";
+				$mod   = strtolower($mod);
+				$found = false;
+				foreach($mods as $m) {
+					if($mod == strtolower($m)) {
+						$found = true;
+						break;
+					}
+				}
+				if($found) {
+					echo "Ok\n";
+				} else {
+					echo "Failed\n";
+				}
 			} else {
-				echo "Failed\n";
+				echo "Modules:<ul>\n";
+				foreach($mods as $mod) {
+					echo "<li>$mod</li>\n";
+				}
+				echo "</ul>\n";
 			}
 		} else {
-			echo "Modules:<ul>\n";
-			foreach($mods as $mod) {
-				echo "<li>$mod</li>\n";
-			}
-			echo "</ul>\n";
+			echo "We sorry, this information is disabled.";
 		}
 	}
 
 	public function showInfo() {
 		global	$wgXML2WikiAllowdPaths;
+		global	$wgXML2WikiConfig;
+
 		echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n";
 		echo "<html>\n\t<head>\n\t\t<title></title>\n\t<body>\n";
 		echo "\t\t<h2>Extension Information:</h2>\n";
@@ -142,19 +151,26 @@ class Xml2Wiki {
 		echo "\t\t\t<li><strong>Description:</strong> ".Xml2Wiki::Property('_description')."</li>\n";
 		echo "\t\t\t<li><strong>Author:</strong> ".Xml2Wiki::Property('author')."</li>\n";
 		echo "\t\t\t<li><strong>URL:</strong> ".Xml2Wiki::Property('url')."</li>\n";
-		echo "\t\t\t<li><strong>Installation Directory:</strong> ".dirname(__FILE__)."</li>\n";
-		echo "\t\t</ul>\n";
-		echo "\t\t<h2>Allowed Paths:</h2>\n";
-		echo "\t\t<ul>\n";
-		foreach($wgXML2WikiAllowdPaths as $path) {
-			echo "\t\t\t<li>{$path}</li>\n";
+		if($wgXML2WikiConfig['showinstalldir']) {
+			echo "\t\t\t<li><strong>Installation Directory:</strong> ".dirname(__FILE__)."</li>\n";
 		}
 		echo "\t\t</ul>\n";
-		echo "\t\t</ul>\n";
-		echo "\t\t<h2>System Information:</h2>\n";
-		echo "\t\t<ul>\n";
-		echo "\t\t\t<li><strong>Current PHP version:</strong> ".phpversion()."</li>\n";
-		echo "\t\t</ul>\n";
+		echo "\t\t<h2>Allowed Paths:</h2>\n";
+		if($wgXML2WikiConfig['showallowpaths']) {
+			echo "\t\t<ul>\n";
+			foreach($wgXML2WikiAllowdPaths as $path) {
+				echo "\t\t\t<li>{$path}</li>\n";
+			}
+			echo "\t\t</ul>\n";
+		} else {
+			echo "\t\t<p>We sorry, this information is disabled.</p>\n";
+		}
+		if($wgXML2WikiConfig['showsysinfo']) {
+			echo "\t\t<h2>System Information:</h2>\n";
+			echo "\t\t<ul>\n";
+			echo "\t\t\t<li><strong>Current PHP version:</strong> ".phpversion()."</li>\n";
+			echo "\t\t</ul>\n";
+		}
 		echo "\t</body>\n</html>\n";
 	}
 
@@ -186,13 +202,20 @@ class Xml2Wiki {
 	}
 
 	protected function clear() {
-		unset($this->_translations);
+		if(isset($this->_translations)) {
+			unset($this->_translations['tags']);
+			unset($this->_translations['attrs']);
+			unset($this->_translations);
+		}
 
 		$this->data          = '';
 		$this->_filename     = '';
 		$this->_lastError    = '';
 		$this->_showAttrs    = false;
-		$this->_translations = array();
+		$this->_translations = array(
+						'tags'  => array(),
+						'attrs' => array()
+					);
 		$this->_translator   = '';
 	}
 
@@ -205,25 +228,31 @@ class Xml2Wiki {
 	protected function loadTranslations($filepath) {
 		$out = "";
 
-		$xml = simplexml_load_file($filepath);
-		if($xml->getName() == 'translations') {
-			foreach($xml as $t) {
-				if($t->getName() == 'translation') {
-					if(isset($t->tag) && isset($t->means)) {
-						$this->_translations["{$t->tag}"] = "{$t->means}";
+		if($this->checkSimpleXML()) {
+			$xml = simplexml_load_file($filepath);
+			if($xml->getName() == 'translations') {
+				foreach($xml as $t) {
+					if($t->getName() == 'translation') {
+						if(isset($t->tag) && isset($t->means)) {
+							$this->_translations['tags']["{$t->tag}"] = "{$t->means}";
+						} elseif(isset($t->attribute) && isset($t->means)) {
+							$this->_translations['attrs']["{$t->attribute}"] = "{$t->means}";
+						} else {
+							$out = $this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Bad formed translation XML</a></span>";
+							break;
+						}
 					} else {
-						$out = $this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Bad formed translation XML</a></span>";
+						$out = $this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Bad formed translation XML. Unknown tag '".$xml->getName()."'</a></span>";
 						break;
 					}
-				} else {
-					$out = $this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Bad formed translation XML. Unknown tag '".$xml->getName()."'</a></span>";
-					break;
 				}
+			} else {
+				$out = $this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Bad formed translation XML. Unknown tag '".$xml->getName()."'</a></span>";
 			}
+			unset($xml);
 		} else {
-			$out = $this->_lastError = "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."Bad formed translation XML. Unknown tag '".$xml->getName()."'</a></span>";
+			$out = $this->_lastError;
 		}
-		unset($xml);
 
 		return $out;
 	}
@@ -258,7 +287,7 @@ class Xml2Wiki {
 		$out = "<div class=\"Xml2Wiki_list\">\n";
 
 		$xml = simplexml_load_string($this->_data);
-		$out.= "\t<span class=\"MainItem\">".$this->translateTagName($xml->getName())."</span><ul>\n";
+		$out.= "\t<span class=\"MainItem\">".$this->translate($xml->getName())."</span><ul>\n";
 
 		if(count($xml->children())) {
 			foreach($xml->children() as $child) {
@@ -276,18 +305,36 @@ class Xml2Wiki {
 	protected function showAsListChild(&$child, $level=1, $space="\t\t") {
 		$out = "";
 
+		global	$wgXML2WikiConfig;
+
 		if(count($child->children())) {
 			foreach($child->children() as $c) {
-				$out.= "{$space}<li class=\"ItemLevel{$level}\"><span class=\"ItemName\">".$this->translateTagName($child->getName())."</span><ul>\n";
+				$out.= "{$space}<li class=\"ItemLevel{$level}\"><span class=\"ItemName\">".$this->translate($child->getName())."</span><ul>\n";
 				$out.= $this->showAsListChild($c, $level+1, $space."\t");
 				$out.= "{$space}</ul></li>\n";
 			}
 		} else {
 			$value = "{$child}";
 			$out  .= "{$space}<li class=\"ItemLevel{$level}\">\n";
-			$out  .= "{$space}\t<span class=\"ItemName\">".$this->translateTagName($child->getName()).($value?":":"")."</span>\n";
+			$out  .= "{$space}\t<span class=\"ItemName\">".$this->translate($child->getName()).($value?":":"")."</span>\n";
 			$out  .= "{$space}\t<span class=\"ItemValue\">$value</span>\n";
-			$out  .= "{$space}</li>\n";
+			if($this->_showAttrs && count($child->attributes())) {
+				$out  .= "{$space}\t<ul>\n";
+				foreach($child->attributes() as $attr => $val) {
+					$tattr = $this->translate("{$attr}",true);
+
+					$out.= "{$space}\t\t<li>\n";
+					if($tattr != $attr) {
+						$out.= "{$space}\t\t\t<span class=\"ItemAttrName\">{$wgXML2WikiConfig['transattributesprefix']}{$tattr}{$wgXML2WikiConfig['transattributessuffix']}</span>\n";
+					} else {
+						$out.= "{$space}\t\t\t<span class=\"ItemAttrName\">{$wgXML2WikiConfig['attributesprefix']}{$attr}{$wgXML2WikiConfig['attributessuffix']}</span>\n";
+					}
+					$out.= "{$space}\t\t\t<span class=\"ItemAttrValue\">$val</span>\n";
+					$out.= "{$space}\t\t</li>\n";
+				}
+				$out  .= "{$space}\t</ul>\n";
+			}
+			$out.= "{$space}</li>\n";
 		}
 		
 		return $out;
@@ -326,10 +373,16 @@ class Xml2Wiki {
 		return $out;
 	}
 
-	protected function translateTagName($name) {
+	protected function translate($name, $isAttr=false) {
 		$out = $name;
-		if(isset($this->_translations[$name])) {
-			$out = $this->_translations[$name];
+		if($isAttr) {
+			if(isset($this->_translations['attrs'][$name])) {
+				$out = $this->_translations['attrs'][$name];
+			}
+		} else {
+			if(isset($this->_translations['tags'][$name])) {
+				$out = $this->_translations['tags'][$name];
+			}
 		}
 		return $out;
 	}
