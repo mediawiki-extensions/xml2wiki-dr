@@ -16,7 +16,7 @@ class Xml2Wiki {
 	protected static	$_Instance   = NULL;
 	protected static	$_Properties = array(
 						'name'            => 'Xml2Wiki',
-						'version'         => '0.1b',
+						'version'         => '0.1',
 						'date'            => '2010-07-06',
 						'_description'    => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags.",
 						'description'     => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags.<sup>[{{SERVER}}{{SCRIPTPATH}}/extensions/xml2wiki-dr/xml2wiki-dr.php?info more]</sup>",
