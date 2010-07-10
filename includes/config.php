@@ -12,7 +12,7 @@ if(!isset($wgXML2WikiConfig)) {
 /**
 * Allowed Directories.
 */
-$wgXML2WikiAllowdPaths[] = dirname(__FILE__).DIRECTORY_SEPARATOR.'xmls';
+$wgXML2WikiAllowdPaths[] = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR.'xmls';
 
 /**
 * Configuration.
