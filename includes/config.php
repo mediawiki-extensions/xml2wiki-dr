@@ -5,6 +5,11 @@
  * Subversion
  *	- ID:  $Id$
  *	- URL: $URL$
+ *
+ * @copyright 2010 Alejandro Darío Simi
+ * @license GPL
+ * @author Alejandro Darío Simi
+ * @date 2010-07-06
  */
 
 /**

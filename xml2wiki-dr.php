@@ -5,6 +5,11 @@
  * Subversion
  *	- ID:  $Id$
  *	- URL: $URL$
+ *
+ * @copyright 2010 Alejandro Darío Simi
+ * @license GPL
+ * @author Alejandro Darío Simi
+ * @date 2010-07-06
  */
 
 require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'config.php');
@@ -42,13 +47,15 @@ if(!defined('MEDIAWIKI')) {
 		'descriptionmsg'  => Xml2Wiki::Property('descriptionmsg'),
 		'author'          => Xml2Wiki::Property('author'),
 		'url'             => Xml2Wiki::Property('url'),
+		'svn-date'        => Xml2Wiki::Property('svn-date'),
+		'svn-revision'    => Xml2Wiki::Property('svn-revision'),
 	);
 	$wgExtensionCredits['specialpage'][] = array(
 		'name'            => Xml2Wiki::Property('name'),
 		'version'         => Xml2Wiki::Property('version'),
 		'date'            => Xml2Wiki::Property('date'),
-		'description'     => Xml2Wiki::Property('description'),
-		'descriptionmsg'  => Xml2Wiki::Property('descriptionmsg'),
+		'description'     => Xml2Wiki::Property('sinfo-description'),
+		'descriptionmsg'  => Xml2Wiki::Property('sinfo-descriptionmsg'),
 		'author'          => Xml2Wiki::Property('author'),
 		'url'             => Xml2Wiki::Property('url'),
 	);
