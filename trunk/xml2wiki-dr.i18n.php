@@ -5,12 +5,19 @@
  * Subversion
  *	- ID:  $Id$
  *	- URL: $URL$
+ *
+ * @copyright 2010 Alejandro Darío Simi
+ * @license GPL
+ * @author Alejandro Darío Simi
+ * @date 2010-07-06
  */
 
 $messages = array();
 $messages['en'] = array(
 	'badtxml'		=> 'Bad formed translation XML',
 	'badtxml-unknowntag'	=> 'Bad formed translation XML. Unknown tag \'$1\'',
+	'disabled'		=> 'Disabled',
+	'enabled'		=> 'Enabled',
 	'forbbidenfile'		=> 'Unable to read path \'$1\'',
 	'forbbidenwfile'	=> 'Unable to read wiki-file \'$1\' (<a href="$2">upload it</a>)',
 	'nofilename'		=> 'Filename not specified',
@@ -21,9 +28,13 @@ $messages['en'] = array(
 	'unknown-style'		=> 'Unknown style \'$1\'',
 	'xml2wiki-desc'		=> 'XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags.<sup>[[Special:Xml2Wiki|more]]</sup>',
 	'xml2wiki'		=> 'XML2Wiki',
+	'xml-noparsing'		=> 'Unable to parse XML \'$1\'',
 
+	'sinfo-xml2wiki-desc'		=> 'XML to Wiki \'\'special page\'\'. Visit [[Special:Xml2Wiki]]',
 	'sinfo-allowed-paths'		=> 'Allowed Paths',
+	'sinfo-attributes'		=> 'Attributes',
 	'sinfo-author'			=> 'Author',
+	'sinfo-configs'			=> 'Configuration',
 	'sinfo-description'		=> 'Description',
 	'sinfo-extension-information'	=> 'Extension Information',
 	'sinfo-information-disabled'	=> 'We sorry, this information is disabled',
@@ -33,16 +44,30 @@ $messages['en'] = array(
 	'sinfo-links'			=> 'Links',
 	'sinfo-modules'			=> 'Modules',
 	'sinfo-name'			=> 'Name',
+	'sinfo-normal'			=> 'Normal',
 	'sinfo-not-installed'		=> 'is NOT installed',
+	'sinfo-permissions'		=> 'Permissions',
 	'sinfo-php-version'		=> 'Current PHP version',
+	'sinfo-prefix'			=> 'Prefix',
 	'sinfo-required-extensions'	=> 'Required Extensions',
+	'sinfo-showallowpaths'		=> 'Show allowed paths',
+	'sinfo-showinstalldir'		=> 'Show installation directory',
+	'sinfo-showmodules'		=> 'Show modules',
+	'sinfo-showsysinfo'		=> 'Show system information',
+	'sinfo-suffix'			=> 'Suffix',
 	'sinfo-system-information'	=> 'System Information',
+	'sinfo-translated'		=> 'Translated',
 	'sinfo-url'			=> 'URL',
 	'sinfo-version'			=> 'Version',
+	'sinfo-svn'			=> 'Subversion',
+	'sinfo-svn-date'		=> 'Last changed date',
+	'sinfo-svn-revision'		=> 'Last changed revision',
 );
 $messages['es'] = array(
-	'badtxml'		=> 'XML de traducciones mal formado',
 	'badtxml-unknowntag'	=> 'XML de traducciones mal formado. Identificador \'$1\' desconocido',
+	'badtxml'		=> 'XML de traducciones mal formado',
+	'disabled'		=> 'Deshabilitado',
+	'enabled'		=> 'Habilitado',
 	'forbbidenfile'		=> 'No es posible leer la ruta \'$1\'',
 	'forbbidenwfile'	=> 'No es posible leer el archivo-wiki \'$1\' (<a href="$2">subirlo</a>)',
 	'nofilename'		=> 'Nombre de archivo no especificado',
@@ -53,9 +78,16 @@ $messages['es'] = array(
 	'unknown-style'		=> 'Estilo \'$1\' desconocido',
 	'xml2wiki-desc'		=> 'XML to Wiki<br/>Provee los identificadores <tt>&lt;xml2wiki&gt;</tt> y <tt>&lt;/xml2wiki&gt;</tt>.<sup>[[Special:Xml2Wiki|more]]</sup>',
 	'xml2wiki'		=> 'XML2Wiki',
+	'xml-noparsing'		=> 'No se puede descomponer el XML \'$1\'',
 
+	'sinfo-svn'			=> 'Subversion',
+	'sinfo-svn-date'		=> 'Última fecha de cambio',
+	'sinfo-svn-revision'		=> 'Última número de revisión',
+	'sinfo-xml2wiki-desc'		=> 'XML to Wiki \'\'página especial\'\'. Visite [[Special:Xml2Wiki]]',
 	'sinfo-allowed-paths'		=> 'Rutas Permitidas',
+	'sinfo-attributes'		=> 'Atributos',
 	'sinfo-author'			=> 'Autor',
+	'sinfo-configs'			=> 'Configuración',
 	'sinfo-description'		=> 'Descripción',
 	'sinfo-extension-information'	=> 'Información de la Extensión',
 	'sinfo-information-disabled'	=> 'Lo sentimos, esta imformanción se encuentra deshabilitada.',
@@ -65,10 +97,19 @@ $messages['es'] = array(
 	'sinfo-links'			=> 'Enlaces',
 	'sinfo-modules'			=> 'Módulos',
 	'sinfo-name'			=> 'Nombre',
+	'sinfo-normal'			=> 'Normal',
 	'sinfo-not-installed'		=> 'NO está instalado',
+	'sinfo-permissions'		=> 'Permisos',
 	'sinfo-php-version'		=> 'Versión Actual de PHP',
+	'sinfo-prefix'			=> 'Prefijo',
 	'sinfo-required-extensions'	=> 'Extensiones Requeridas',
+	'sinfo-showallowpaths'		=> 'Mostrar rutas permitidas',
+	'sinfo-showinstalldir'		=> 'Mostrar directorio de instalación',
+	'sinfo-showmodules'		=> 'Mostrar módulos',
+	'sinfo-showsysinfo'		=> 'Mostrar información de sistema',
+	'sinfo-suffix'			=> 'Sufijo',
 	'sinfo-system-information'	=> 'Información del Sistema',
+	'sinfo-translated'		=> 'Traducido',
 	'sinfo-url'			=> 'URL',
 	'sinfo-version'			=> 'Versión',
 );

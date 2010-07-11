@@ -5,6 +5,11 @@
  * Subversion
  *	- ID:  $Id$
  *	- URL: $URL$
+ *
+ * @copyright 2010 Alejandro Darío Simi
+ * @license GPL
+ * @author Alejandro Darío Simi
+ * @date 2010-07-06
  */
 
 require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'config.php');
@@ -15,15 +20,19 @@ require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATO
 class Xml2Wiki extends SpecialPage {
 	protected static	$_Instance   = NULL;
 	protected static	$_Properties = array(
-						'name'            => 'Xml2Wiki',
-						'version'         => '0.2',
-						'date'            => '2010-07-06',
-						'_description'    => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags.",
-						'description'     => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags.<sup>[[Special:Xml2Wiki|more]]</sup>",
-						'descriptionmsg'  => 'xml2wiki-desc',
-						'author'          => array('Alejandro Darío Simi'),
-						'url'             => 'http://wiki.daemonraco.com/wiki/xml2wiki-dr',
-	);
+						'name'                 => 'Xml2Wiki',
+						'version'              => '0.2',
+						'date'                 => '2010-07-06',
+						'_description'         => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags.",
+						'description'          => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags.<sup>[[Special:Xml2Wiki|more]]</sup>",
+						'descriptionmsg'       => 'xml2wiki-desc',
+						'sinfo-description'    => "XML to Wiki \'\'special page\'\'. Visit [[Special:Xml2Wiki]]",
+						'sinfo-descriptionmsg' => 'sinfo-xml2wiki-desc',
+						'author'               => array('Alejandro Darío Simi'),
+						'url'                  => 'http://wiki.daemonraco.com/wiki/xml2wiki-dr',
+						'svn-date'             => '$LastChangedDate$',
+						'svn-revision'         => '$LastChangedRevision$',
+					);
 
 	protected static	$ERROR_PREFIX = 'DR_XML2Wiki Error: ';
 
@@ -170,6 +179,12 @@ class Xml2Wiki extends SpecialPage {
 		if($wgXML2WikiConfig['showinstalldir']) {
 			$out.= "\t\t\t<li><strong>".wfMsg('sinfo-installation-directory').":</strong> ".dirname(__FILE__)."</li>\n";
 		}
+		$out.= "\t\t\t<li><strong>".wfMsg('sinfo-svn').":</strong><ul>\n";
+		$aux = str_replace('$LastChangedRevision$aux = str_replace(' $', '', $aux);
+		$out.= "\t\t\t\t<li><strong>".wfMsg('sinfo-svn-revision').":</strong> {$aux}</li>\n";
+		$aux = str_replace('$LastChangedDate$aux = str_replace(' $', '', $aux);
+		$out.= "\t\t\t\t<li><strong>".wfMsg('sinfo-svn-date').":</strong> {$aux}</li>\n";
+		$out.= "\t\t\t</ul></li>\n";
 		$out.= "\t\t</ul>\n";
 
 		$out.= "\t\t<h2>".wfMsg('sinfo-allowed-paths')."</h2>\n";
@@ -209,6 +224,42 @@ class Xml2Wiki extends SpecialPage {
 		}
 		$out.= "\t\t\t<li><strong>SyntaxHighlight:</strong> ".($tag?wfMsg('sinfo-is-installed-tag', $tag):wfMsg('sinfo-not-installed'))."</li>\n";
 		$out.= "\t\t</ul>\n";
+
+		$out.= "\t\t<h2>".wfMsg('sinfo-configs')."</h2>\n";
+		$out.= "\t\t<table class=\"wikitable\">\n";
+		$out.= "\t\t\t<tr>\n";
+		$out.= "\t\t\t\t<th colspan=\"3\">".wfMsg('sinfo-attributes')."</th>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th rowspan=\"2\">".wfMsg('sinfo-prefix')."</th>\n";
+		$out.= "\t\t\t\t<th>".wfMsg('sinfo-normal')."</th>\n";
+		$out.= "\t\t\t\t<td>\"{$wgXML2WikiConfig['attributesprefix']}\"</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th>".wfMsg('sinfo-translated')."</th>\n";
+		$out.= "\t\t\t\t<td>\"{$wgXML2WikiConfig['transattributesprefix']}\"</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th rowspan=\"2\">".wfMsg('sinfo-suffix')."</th>\n";
+		$out.= "\t\t\t\t<th>".wfMsg('sinfo-normal')."</th>\n";
+		$out.= "\t\t\t\t<td>\"{$wgXML2WikiConfig['attributessuffix']}\"</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th>".wfMsg('sinfo-translated')."</th>\n";
+		$out.= "\t\t\t\t<td>\"{$wgXML2WikiConfig['transattributessuffix']}\"</td>\n";
+		$out.= "\t\t\t</tr>\n";
+		$out.= "\t\t\t<tr>\n";
+		$out.= "\t\t\t\t<th colspan=\"3\">".wfMsg('sinfo-permissions')."</th>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th colspan=\"2\">".wfMsg('sinfo-showallowpaths')."</th>\n";
+		$out.= "\t\t\t\t<td>\"".($wgXML2WikiConfig['showallowpaths']?wfMsg('enabled'):wfMsg('disabled'))."\"</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th colspan=\"2\">".wfMsg('sinfo-showinstalldir')."</th>\n";
+		$out.= "\t\t\t\t<td>\"".($wgXML2WikiConfig['showinstalldir']?wfMsg('enabled'):wfMsg('disabled'))."\"</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th colspan=\"2\">".wfMsg('sinfo-showsysinfo')."</th>\n";
+		$out.= "\t\t\t\t<td>\"".($wgXML2WikiConfig['showsysinfo']?wfMsg('enabled'):wfMsg('disabled'))."\"</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th colspan=\"2\">".wfMsg('sinfo-showmodules')."</th>\n";
+		$out.= "\t\t\t\t<td>\"".($wgXML2WikiConfig['showmodules']?wfMsg('enabled'):wfMsg('disabled'))."\"</td>\n";
+		$out.= "\t\t\t</tr>\n";
+		$out.= "\t\t</table>\n";
 
 		$out.= "\t\t<h2>".wfMsg('sinfo-links')."</h2>\n";
 		$out.= "\t\t<ul>\n";
@@ -294,27 +345,31 @@ class Xml2Wiki extends SpecialPage {
 
 		$this->_lastError = "";
 		if($this->checkSimpleXML()) {
-			$xml = simplexml_load_file($filepath);
-			if($xml->getName() == 'translations') {
-				foreach($xml as $t) {
-					if($t->getName() == 'translation') {
-						if(isset($t->tag) && isset($t->means)) {
-							$this->_translations['tags']["{$t->tag}"] = "{$t->means}";
-						} elseif(isset($t->attribute) && isset($t->means)) {
-							$this->_translations['attrs']["{$t->attribute}"] = "{$t->means}";
+			$xml = @simplexml_load_file($filepath);
+			if($xml) {
+				if($xml->getName() == 'translations') {
+					foreach($xml as $t) {
+						if($t->getName() == 'translation') {
+							if(isset($t->tag) && isset($t->means)) {
+								$this->_translations['tags']["{$t->tag}"] = "{$t->means}";
+							} elseif(isset($t->attribute) && isset($t->means)) {
+								$this->_translations['attrs']["{$t->attribute}"] = "{$t->means}";
+							} else {
+								$out = $this->_lastError = $this->formatErrorMessage(wfMsg('badtxml'));
+								break;
+							}
 						} else {
-							$out = $this->_lastError = $this->formatErrorMessage(wfMsg('badtxml'));
+							$out = $this->_lastError = $this->formatErrorMessage(wfMsg('badtxml',$t->getName()));
 							break;
 						}
-					} else {
-						$out = $this->_lastError = $this->formatErrorMessage(wfMsg('badtxml',$t->getName()));
-						break;
 					}
+				} else {
+					$out = $this->_lastError = $this->formatErrorMessage(wfMsg('badtxml',$xml->getName()));
 				}
+				unset($xml);
 			} else {
-				$out = $this->_lastError = $this->formatErrorMessage(wfMsg('badtxml',$xml->getName()));
+				$out = $this->_lastError = $this->formatErrorMessage(wfMsg('xml-noparsing',$filepath));
 			}
-			unset($xml);
 		} else {
 			$out = $this->_lastError;
 		}
