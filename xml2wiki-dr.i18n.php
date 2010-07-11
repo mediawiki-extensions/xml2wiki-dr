@@ -30,7 +30,6 @@ $messages['en'] = array(
 	'xml2wiki'		=> 'XML2Wiki',
 	'xml-noparsing'		=> 'Unable to parse XML \'$1\'',
 
-	'sinfo-xml2wiki-desc'		=> 'XML to Wiki \'\'special page\'\'. Visit [[Special:Xml2Wiki]]',
 	'sinfo-allowed-paths'		=> 'Allowed Paths',
 	'sinfo-attributes'		=> 'Attributes',
 	'sinfo-author'			=> 'Author',
@@ -55,13 +54,14 @@ $messages['en'] = array(
 	'sinfo-showmodules'		=> 'Show modules',
 	'sinfo-showsysinfo'		=> 'Show system information',
 	'sinfo-suffix'			=> 'Suffix',
+	'sinfo-svn-date'		=> 'Last changed date',
+	'sinfo-svn-revision'		=> 'Last changed revision',
+	'sinfo-svn'			=> 'Subversion',
 	'sinfo-system-information'	=> 'System Information',
 	'sinfo-translated'		=> 'Translated',
 	'sinfo-url'			=> 'URL',
 	'sinfo-version'			=> 'Version',
-	'sinfo-svn'			=> 'Subversion',
-	'sinfo-svn-date'		=> 'Last changed date',
-	'sinfo-svn-revision'		=> 'Last changed revision',
+	'sinfo-xml2wiki-desc'		=> 'XML to Wiki \'\'special page\'\'. Visit [[Special:Xml2Wiki]]',
 );
 $messages['es'] = array(
 	'badtxml-unknowntag'	=> 'XML de traducciones mal formado. Identificador \'$1\' desconocido',
@@ -80,10 +80,6 @@ $messages['es'] = array(
 	'xml2wiki'		=> 'XML2Wiki',
 	'xml-noparsing'		=> 'No se puede descomponer el XML \'$1\'',
 
-	'sinfo-svn'			=> 'Subversion',
-	'sinfo-svn-date'		=> 'Última fecha de cambio',
-	'sinfo-svn-revision'		=> 'Última número de revisión',
-	'sinfo-xml2wiki-desc'		=> 'XML to Wiki \'\'página especial\'\'. Visite [[Special:Xml2Wiki]]',
 	'sinfo-allowed-paths'		=> 'Rutas Permitidas',
 	'sinfo-attributes'		=> 'Atributos',
 	'sinfo-author'			=> 'Autor',
@@ -108,9 +104,13 @@ $messages['es'] = array(
 	'sinfo-showmodules'		=> 'Mostrar módulos',
 	'sinfo-showsysinfo'		=> 'Mostrar información de sistema',
 	'sinfo-suffix'			=> 'Sufijo',
+	'sinfo-svn-date'		=> 'Última fecha de cambio',
+	'sinfo-svn-revision'		=> 'Última número de revisión',
+	'sinfo-svn'			=> 'Subversion',
 	'sinfo-system-information'	=> 'Información del Sistema',
 	'sinfo-translated'		=> 'Traducido',
 	'sinfo-url'			=> 'URL',
 	'sinfo-version'			=> 'Versión',
+	'sinfo-xml2wiki-desc'		=> 'XML to Wiki \'\'página especial\'\'. Visite [[Special:Xml2Wiki]]',
 );
 ?>
