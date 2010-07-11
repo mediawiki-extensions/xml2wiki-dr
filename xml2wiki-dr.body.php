@@ -12,14 +12,14 @@ require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATO
 /**
  * @class Xml2Wiki
  */
-class Xml2Wiki {
+class Xml2Wiki extends SpecialPage {
 	protected static	$_Instance   = NULL;
 	protected static	$_Properties = array(
 						'name'            => 'Xml2Wiki',
-						'version'         => '0.1',
+						'version'         => '0.2',
 						'date'            => '2010-07-06',
 						'_description'    => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags.",
-						'description'     => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags.<sup>[{{SERVER}}{{SCRIPTPATH}}/extensions/xml2wiki-dr/xml2wiki-dr.php?info more]</sup>",
+						'description'     => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags.<sup>[[Special:Xml2Wiki|more]]</sup>",
 						'descriptionmsg'  => 'xml2wiki-desc',
 						'author'          => array('Alejandro Darío Simi'),
 						'url'             => 'http://wiki.daemonraco.com/wiki/xml2wiki-dr',
@@ -48,6 +48,7 @@ class Xml2Wiki {
 	protected	$_lastError;
 
 	public function __construct() {
+		parent::__construct('xml2wiki');
 		$this->_lastError = '';
 
 		$this->_localDirectory = dirname(__FILE__);
@@ -69,6 +70,23 @@ class Xml2Wiki {
 			global	$wgParser;
 			$wgParser->setHook('xml2wiki', array(&$this, 'parse'));
 		}
+	}
+	
+	public function execute($par) {
+		global	$wgRequest;
+		global	$wgOut;
+		
+		$this->setHeaders();
+ 
+		/*
+		 * Get request data from, e.g.
+		 */
+		$param = $wgRequest->getText('param');
+ 
+		# Do stuff
+		# ...
+		$output = $this->getInfo();
+		$wgOut->addWikiText($output);
 	}
 
 	/**
@@ -129,72 +147,76 @@ class Xml2Wiki {
 		return $out;
 	}
 
-	public function modulesCheck() {
-		global	$wgXML2WikiConfig;
-		if($wgXML2WikiConfig['showmodules']) {
-			$mods = get_loaded_extensions();
-			if($_REQUEST['modules']) {
-				$mod   = $_REQUEST['modules'];
-				echo "Module {$mod}... ";
-				$mod   = strtolower($mod);
-				$found = false;
-				foreach($mods as $m) {
-					if($mod == strtolower($m)) {
-						$found = true;
-						break;
-					}
-				}
-				if($found) {
-					echo "Ok\n";
-				} else {
-					echo "Failed\n";
-				}
-			} else {
-				echo "Modules:<ul>\n";
-				foreach($mods as $mod) {
-					echo "<li>$mod</li>\n";
-				}
-				echo "</ul>\n";
-			}
-		} else {
-			echo "We sorry, this information is disabled.";
-		}
-	}
+	public function getInfo() {
+		$out = "";
 
-	public function showInfo() {
 		global	$wgXML2WikiAllowdPaths;
 		global	$wgXML2WikiConfig;
+		global	$wgParser;
 
-		echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n";
-		echo "<html>\n\t<head>\n\t\t<title></title>\n\t<body>\n";
-		echo "\t\t<h2>Extension Information:</h2>\n";
-		echo "\t\t<ul>\n";
-		echo "\t\t\t<li><strong>Name:</strong> ".Xml2Wiki::Property('name')."</li>\n";
-		echo "\t\t\t<li><strong>Version:</strong> ".Xml2Wiki::Property('version')."</li>\n";
-		echo "\t\t\t<li><strong>Description:</strong> ".Xml2Wiki::Property('_description')."</li>\n";
-		echo "\t\t\t<li><strong>Author:</strong> ".Xml2Wiki::Property('author')."</li>\n";
-		echo "\t\t\t<li><strong>URL:</strong> ".Xml2Wiki::Property('url')."</li>\n";
+		$tags = $wgParser->getTags();
+		
+		$out.= "\t\t<h2>".wfMsg('sinfo-extension-information')."</h2>\n";
+		$out.= "\t\t<ul>\n";
+		$out.= "\t\t\t<li><strong>".wfMsg('sinfo-name').":</strong> ".Xml2Wiki::Property('name')."</li>\n";
+		$out.= "\t\t\t<li><strong>".wfMsg('sinfo-version').":</strong> ".Xml2Wiki::Property('version')."</li>\n";
+		$out.= "\t\t\t<li><strong>".wfMsg('sinfo-description').":</strong> ".Xml2Wiki::Property('_description')."</li>\n";
+		$out.= "\t\t\t<li><strong>".wfMsg('sinfo-author').":</strong><ul>\n";
+		foreach(Xml2Wiki::Property('author') as $author) {
+			$out.= "\t\t\t\t<li>{$author}</li>\n";
+		}
+		$out.= "\t\t\t</ul></li>\n";
+		$out.= "\t\t\t<li><strong>".wfMsg('sinfo-url').":</strong> ".Xml2Wiki::Property('url')."</li>\n";
 		if($wgXML2WikiConfig['showinstalldir']) {
-			echo "\t\t\t<li><strong>Installation Directory:</strong> ".dirname(__FILE__)."</li>\n";
+			$out.= "\t\t\t<li><strong>".wfMsg('sinfo-installation-directory').":</strong> ".dirname(__FILE__)."</li>\n";
 		}
-		echo "\t\t</ul>\n";
-		echo "\t\t<h2>Allowed Paths:</h2>\n";
+		$out.= "\t\t</ul>\n";
+
+		$out.= "\t\t<h2>".wfMsg('sinfo-allowed-paths')."</h2>\n";
 		if($wgXML2WikiConfig['showallowpaths']) {
-			echo "\t\t<ul>\n";
+			$out.= "\t\t<ul>\n";
 			foreach($wgXML2WikiAllowdPaths as $path) {
-				echo "\t\t\t<li>{$path}</li>\n";
+				$out.= "\t\t\t<li>{$path}</li>\n";
 			}
-			echo "\t\t</ul>\n";
+			$out.= "\t\t</ul>\n";
 		} else {
-			echo "\t\t<p>We sorry, this information is disabled.</p>\n";
+			$out.= "\t\t<p>".wfMsg('sinfo-information-disabled').".</p>\n";
 		}
+
 		if($wgXML2WikiConfig['showsysinfo']) {
-			echo "\t\t<h2>System Information:</h2>\n";
-			echo "\t\t<ul>\n";
-			echo "\t\t\t<li><strong>Current PHP version:</strong> ".phpversion()."</li>\n";
-			echo "\t\t</ul>\n";
+			$out.= "\t\t<h2>".wfMsg('sinfo-system-information')."</h2>\n";
+			$out.= "\t\t<ul>\n";
+			$out.= "\t\t\t<li><strong>".wfMsg('sinfo-php-version').":</strong> ".phpversion()."</li>\n";
+			$out.= "\t\t</ul>\n";
 		}
-		echo "\t</body>\n</html>\n";
+
+		$out.= "\t\t<h2>".wfMsg('sinfo-modules')."</h2>\n";
+		if($wgXML2WikiConfig['showmodules']) {
+			$out.= "\t\t<ul>\n";
+			$out.= "\t\t\t<li><strong>SimpleXml:</strong> ".($this->checkSimpleXML()?wfMsg('sinfo-is-installed'):wfMsg('sinfo-not-installed'))."</li>\n";
+			$out.= "\t\t</ul>\n";
+		} else {
+			$out.= "\t\t<p>".wfMsg('sinfo-information-disabled').".</p>\n";
+		}
+
+		$out.= "\t\t<h2>".wfMsg('sinfo-required-extensions')."</h2>\n";
+		$out.= "\t\t<ul>\n";
+		$tag = "";
+		if(in_array('syntaxhighlight', $tags)) {
+			$tag = 'syntaxhighlight';
+		} elseif(in_array('source', $tags)) {
+			$tag = 'source';
+		}
+		$out.= "\t\t\t<li><strong>SyntaxHighlight:</strong> ".($tag?wfMsg('sinfo-is-installed-tag', $tag):wfMsg('sinfo-not-installed'))."</li>\n";
+		$out.= "\t\t</ul>\n";
+
+		$out.= "\t\t<h2>".wfMsg('sinfo-links')."</h2>\n";
+		$out.= "\t\t<ul>\n";
+		$out.= "\t\t\t<li><strong>MediaWiki Extensions:</strong> http://www.mediawiki.org/wiki/Extension:XML2Wiki</li>\n";
+		$out.= "\t\t\t<li><strong>GoogleCode Proyect Site:</strong> https://code.google.com/p/xml2wiki-dr/</li>\n";
+		$out.= "\t\t</ul>\n";
+
+		return $out;
 	}
 
 	protected function getFilePath($in) {
@@ -211,7 +233,7 @@ class Xml2Wiki {
 			if($obj) {
 				$out = $wgUploadDirectory.DIRECTORY_SEPARATOR.$obj->getRel();
 			} else {
-				$this->_lastError = $this->formatErrorMessage(wfMsg('forbbidenwfile',$aux[1]));
+				$this->_lastError = $this->formatErrorMessage(wfMsg('forbbidenwfile',$aux[1],Title::makeTitle(NS_SPECIAL,'Upload')->escapeFullURL("wpDestFile={$aux[1]}")));
 			}
 		} else {
 			if($this->checkAllowPath($in)) {
