@@ -180,9 +180,11 @@ class Xml2Wiki extends SpecialPage {
 			$out.= "\t\t\t<li><strong>".wfMsg('sinfo-installation-directory').":</strong> ".dirname(__FILE__)."</li>\n";
 		}
 		$out.= "\t\t\t<li><strong>".wfMsg('sinfo-svn').":</strong><ul>\n";
-		$aux = str_replace('$LastChangedRevision$aux = str_replace(' $', '', $aux);
-		$out.= "\t\t\t\t<li><strong>".wfMsg('sinfo-svn-revision').":</strong> {$aux}</li>\n";
-		$aux = str_replace('$LastChangedDate$aux = str_replace(' $', '', $aux);
+		$aux = str_replace('$', '', Xml2Wiki::Property('svn-revision'));
+		$aux = str_replace('LastChangedRevision: ', '', $aux);
+		$out.= "\t\t\t\t<li><strong>".wfMsg('sinfo-svn-revision').":</strong> r{$aux}</li>\n";
+		$aux = str_replace('$', '', Xml2Wiki::Property('svn-date'));
+		$aux = str_replace('LastChangedDate: ', '', $aux);
 		$out.= "\t\t\t\t<li><strong>".wfMsg('sinfo-svn-date').":</strong> {$aux}</li>\n";
 		$out.= "\t\t\t</ul></li>\n";
 		$out.= "\t\t</ul>\n";
