@@ -6,13 +6,6 @@
  *	- ID:  $Id$
  *	- URL: $URL$
  */
-//$obj = wfFindFile(Title::makeTitle(NS_SPECIAL, 'Upload'));
-//if($obj) {
-//	$out = $wgUploadDirectory.DIRECTORY_SEPARATOR.$obj->getRel();
-//}
-//echo '<pre>';
-//var_dump(Title::makeTitle(NS_SPECIAL, 'Upload')->escapeLocalUrl("wpDestFile="));
-//die;
 
 $messages = array();
 $messages['en'] = array(
