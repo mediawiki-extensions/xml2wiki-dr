@@ -13,6 +13,7 @@
  */
 
 require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'config.php');
+require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'AllowedPaths.php');
 
 /**
  * @class Xml2Wiki
@@ -36,6 +37,7 @@ class Xml2Wiki extends SpecialPage {
 
 	protected static	$ERROR_PREFIX = 'DR_XML2Wiki Error: ';
 
+	protected	$_allowedPaths;
 	protected	$_data;
 	protected	$_class;
 	protected	$_filename;
@@ -58,7 +60,12 @@ class Xml2Wiki extends SpecialPage {
 
 	public function __construct() {
 		parent::__construct('xml2wiki');
-		$this->_lastError = '';
+
+		global	$wgXML2WikiAllowdPaths;
+		global	$wgXML2WikiConfig;
+		
+		$this->_lastError    = '';
+		$this->_allowedPaths = new AllowedPaths($wgXML2WikiAllowdPaths, $wgXML2WikiConfig['allowedpathsrecursive']);
 
 		$this->_localDirectory = dirname(__FILE__);
 
@@ -191,11 +198,56 @@ class Xml2Wiki extends SpecialPage {
 
 		$out.= "\t\t<h2>".wfMsg('sinfo-allowed-paths')."</h2>\n";
 		if($wgXML2WikiConfig['showallowpaths']) {
-			$out.= "\t\t<ul>\n";
-			foreach($wgXML2WikiAllowdPaths as $path) {
-				$out.= "\t\t\t<li>{$path}</li>\n";
+			$out.= "\t\t<table class=\"wikitable\">\n";
+			$list = $this->_allowedPaths->directories();
+			$len  = count($list);
+			if($len) {
+				$out.= "\t\t\t<tr><th rowspan=\"{$len}\" style=\"vertical-align:top;text-align:left;\">".wfMsg('directories')."</th>\n";
+				for($i=0, $j=1; $i<$len; $i++, $j++) {
+					$out.= "\t\t\t\t<td>{$list[$i]}</td>\n";
+					if($j < $len) {
+						$out.= "\t\t\t</tr><tr>\n";
+					}
+				}
+				$out.= "\t\t\t</tr>\n";
 			}
-			$out.= "\t\t</ul>\n";
+			$list = $this->_allowedPaths->files();
+			$len  = count($list);
+			if($len) {
+				$out.= "\t\t\t<tr><th rowspan=\"{$len}\" style=\"vertical-align:top;text-align:left;\">".wfMsg('files')."</th>\n";
+				for($i=0, $j=1; $i<$len; $i++, $j++) {
+					$out.= "\t\t\t\t<td>{$list[$i]}</td>\n";
+					if($j < $len) {
+						$out.= "\t\t\t</tr><tr>\n";
+					}
+				}
+				$out.= "\t\t\t</tr>\n";
+			}
+			$list = $this->_allowedPaths->noAccess();
+			$len  = count($list);
+			if($len) {
+				$out.= "\t\t\t<tr><th rowspan=\"{$len}\" style=\"vertical-align:top;text-align:left;\">".wfMsg('noaccess')."</th>\n";
+				for($i=0, $j=1; $i<$len; $i++, $j++) {
+					$out.= "\t\t\t\t<td style=\"text-decoration:line-through;\">{$list[$i]}</td>\n";
+					if($j < $len) {
+						$out.= "\t\t\t</tr><tr>\n";
+					}
+				}
+				$out.= "\t\t\t</tr>\n";
+			}
+			$list = $this->_allowedPaths->unknown();
+			$len  = count($list);
+			if($len) {
+				$out.= "\t\t\t<tr><th rowspan=\"{$len}\" style=\"vertical-align:top;text-align:left;\">".wfMsg('unknown')."</th>\n";
+				for($i=0, $j=1; $i<$len; $i++, $j++) {
+					$out.= "\t\t\t\t<td style=\"color:#a60000\">{$list[$i]}</td>\n";
+					if($j < $len) {
+						$out.= "\t\t\t</tr><tr>\n";
+					}
+				}
+				$out.= "\t\t\t</tr>\n";
+			}
+			$out.= "\t\t</table>\n";
 		} else {
 			$out.= "\t\t<p>".wfMsg('sinfo-information-disabled').".</p>\n";
 		}
@@ -260,6 +312,9 @@ class Xml2Wiki extends SpecialPage {
 		$out.= "\t\t\t</tr><tr>\n";
 		$out.= "\t\t\t\t<th colspan=\"2\">".wfMsg('sinfo-showmodules')."</th>\n";
 		$out.= "\t\t\t\t<td>\"".($wgXML2WikiConfig['showmodules']?wfMsg('enabled'):wfMsg('disabled'))."\"</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th colspan=\"2\">".wfMsg('sinfo-allowedpathsrecursive')."</th>\n";
+		$out.= "\t\t\t\t<td>\"".($wgXML2WikiConfig['allowedpathsrecursive']?wfMsg('enabled'):wfMsg('disabled'))."\"</td>\n";
 		$out.= "\t\t\t</tr>\n";
 		$out.= "\t\t</table>\n";
 
@@ -337,9 +392,7 @@ class Xml2Wiki extends SpecialPage {
 	}
 
 	protected function checkAllowPath($path) {
-		global	$wgXML2WikiAllowdPaths;
-
-		return (in_array($path, $wgXML2WikiAllowdPaths) || in_array(dirname($path), $wgXML2WikiAllowdPaths));
+		return $this->_allowedPaths->check($path);
 	}
 
 	protected function loadTranslations($filepath) {
