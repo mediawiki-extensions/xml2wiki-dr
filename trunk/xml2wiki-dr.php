@@ -31,9 +31,8 @@ if(!defined('MEDIAWIKI')) {
 	$wgExtensionFunctions[]               = 'Xml2Wiki_Hooker';
 	$wgExtensionMessagesFiles['xml2wiki'] = dirname( __FILE__ ).DIRECTORY_SEPARATOR.'xml2wiki-dr.i18n.php';
 
-	$wgAutoloadClasses['xml2wiki']   = dirname( __FILE__ ).DIRECTORY_SEPARATOR.'xml2wiki-dr.body.php'; # Tell MediaWiki to load the extension body.
-//	$wgExtensionAliasesFiles['xml2wiki'] = dirname( __FILE__ ).DIRECTORY_SEPARATOR.'xml2wiki-dr.alias.php';
-	$wgSpecialPages['xml2wiki']      = 'xml2wiki'; # Let MediaWiki know about your new special page.
+	$wgAutoloadClasses  ['xml2wiki'] = dirname( __FILE__ ).DIRECTORY_SEPARATOR.'xml2wiki-dr.body.php';
+	$wgSpecialPages     ['xml2wiki'] = 'xml2wiki';
 	$wgSpecialPageGroups['xml2wiki'] = 'other';
 	
 	/**
@@ -59,6 +58,5 @@ if(!defined('MEDIAWIKI')) {
 		'author'          => Xml2Wiki::Property('author'),
 		'url'             => Xml2Wiki::Property('url'),
 	);
-
 }
 ?>

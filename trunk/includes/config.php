@@ -50,5 +50,12 @@ $wgXML2WikiConfig['attributessuffix']      = '@';
 $wgXML2WikiConfig['transattributesprefix'] = '@';
 $wgXML2WikiConfig['transattributessuffix'] = '';
 /**	@} */
+
+/**
+ * Path Checks
+ *	@{
+ */
+$wgXML2WikiConfig['allowedpathsrecursive'] = false;
+/**	@} */
 /** @} */
 ?>
