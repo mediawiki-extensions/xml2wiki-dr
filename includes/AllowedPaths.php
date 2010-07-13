@@ -3,8 +3,8 @@
  * @file AllowedPaths.php
  *
  * Subversion
- *	- ID:  $Id: xml2wiki-dr.body.php 10 2010-07-11 21:01:04Z daemonraco $
- *	- URL: $URL: https://xml2wiki-dr.googlecode.com/svn/trunk/xml2wiki-dr.body.php $
+ *	- ID:  $Id$
+ *	- URL: $URL$
  *
  * @copyright 2010 Alejandro Darío Simi
  * @license GPL
