@@ -57,5 +57,6 @@ $wgXML2WikiConfig['transattributessuffix'] = '';
  */
 $wgXML2WikiConfig['allowedpathsrecursive'] = false;
 /**	@} */
+$wgXML2WikiConfig['allownocache']          = true;
 /** @} */
 ?>
