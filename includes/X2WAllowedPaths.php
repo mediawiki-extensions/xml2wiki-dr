@@ -1,6 +1,6 @@
 <?php
 /**
- * @file AllowedPaths.php
+ * @file X2WAllowedPaths.php
  *
  * Subversion
  *	- ID:  $Id$
@@ -13,9 +13,9 @@
  */
 
 /**
- * @class AllowedPaths
+ * @class X2WAllowedPaths
  */
-class AllowedPaths {
+class X2WAllowedPaths {
 	protected	$_isRecursive;
 	protected	$_paths;
 
@@ -33,7 +33,7 @@ class AllowedPaths {
 	public function addPaths(&$list) {
 		if(is_array($list)) {
 			foreach($list as $path) {
-				$path = AllowedPaths::cleanPath($path);
+				$path = X2WAllowedPaths::cleanPath($path);
 				if(file_exists($path)) {
 					if(is_readable($path)) {
 						if(is_dir($path)) {
@@ -63,7 +63,7 @@ class AllowedPaths {
 	public function check($path) {
 		$out = false;
 
-		$path = AllowedPaths::cleanPath($path);
+		$path = X2WAllowedPaths::cleanPath($path);
 		/*
 		 * Checking if its a known file.
 		 */

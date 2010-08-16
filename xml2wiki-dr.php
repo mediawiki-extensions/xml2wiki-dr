@@ -34,7 +34,7 @@ if(!defined('MEDIAWIKI')) {
 	$wgAutoloadClasses  ['xml2wiki'] = dirname( __FILE__ ).DIRECTORY_SEPARATOR.'xml2wiki-dr.body.php';
 	$wgSpecialPages     ['xml2wiki'] = 'xml2wiki';
 	$wgSpecialPageGroups['xml2wiki'] = 'other';
-	
+
 	/**
 	 * MediaWiki Extension Description.
 	 */

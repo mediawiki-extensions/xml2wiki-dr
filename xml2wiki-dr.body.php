@@ -13,19 +13,28 @@
  */
 
 require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'config.php');
-require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'AllowedPaths.php');
+require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'X2WAllowedPaths.php');
+require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'X2WParser.php');
 
 /**
  * @class Xml2Wiki
  */
 class Xml2Wiki extends SpecialPage {
+	/**
+	 * Singleton instance holder.
+	 * @var Xml2Wiki
+	 */
 	protected static	$_Instance   = NULL;
+	/**
+	 * Extension properties holder.
+	 * @var array
+	 */
 	protected static	$_Properties = array(
 						'name'                 => 'Xml2Wiki',
-						'version'              => '0.2',
+						'version'              => '0.3',
 						'date'                 => '2010-07-06',
-						'_description'         => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags.",
-						'description'          => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags.<sup>[[Special:Xml2Wiki|more]]</sup>",
+						'_description'         => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags and MagicWord #x2w.",
+						'description'          => "XML to Wiki<br/>Provides <tt>&lt;xml2wiki&gt;</tt> and <tt>&lt;/xml2wiki&gt;</tt> tags and MagicWord #x2w.<sup>[[Special:Xml2Wiki|more]]</sup>",
 						'descriptionmsg'       => 'xml2wiki-desc',
 						'sinfo-description'    => "XML to Wiki \'\'special page\'\'. Visit [[Special:Xml2Wiki]]",
 						'sinfo-descriptionmsg' => 'sinfo-xml2wiki-desc',
@@ -33,40 +42,60 @@ class Xml2Wiki extends SpecialPage {
 						'url'                  => 'http://wiki.daemonraco.com/wiki/xml2wiki-dr',
 						'svn-date'             => '$LastChangedDate$',
 						'svn-revision'         => '$LastChangedRevision$',
-					);
-
-	protected static	$ERROR_PREFIX = 'DR_XML2Wiki Error: ';
-
-	protected	$_allowedPaths;
-	protected	$_data;
-	protected	$_class;
-	protected	$_filename;
-	protected	$_localDirectory;
-	protected	$_style;
-	protected	$_showAttrs;
-	protected	$_translations;
-	protected	$_translator;
+	);
+	/**
+	 * Debug messages prefix.
+	 * @var string
+	 */
+	protected	$DEBUG_PREFIX = 'x2w-dbg: ';
+	/**
+	 * Error messages prefix.
+	 * @var string
+	 */
+	protected	$ERROR_PREFIX = 'DR_XML2Wiki Error: ';
+	/**
+	 * List of default values for several variables.
+	 * @var array
+	 */
 	protected	$_varDefaults = array(
 				'file'		=> '',		//! file to parse and transform.
 				'class'         => 'wikitable',	//!
+				'debug'		=> 'off',	//! 
 				'showattrs'	=> 'off',	//!
 				'style'		=> 'pre',	//! parsing style.
 				'translator'	=> '',		//! tag translator XML.
 	);
-
-	protected	$_auxTableData;
-
+	/**
+	 * Allowed paths holder and checker.
+	 * @var X2WAllowedPaths
+	 */
+	protected	$_allowedPaths;
+	protected	$_debugEnabled = false;
+	protected	$_localDirectory;
 	protected	$_lastError;
+	/**
+	 * List of loaded XMLs.
+	 * @var array
+	 */
+	protected	$_xmls;
 
+	/**
+	 * Class constructor.
+	 */
 	public function __construct() {
 		parent::__construct('xml2wiki');
 
 		global	$wgXML2WikiAllowdPaths;
 		global	$wgXML2WikiConfig;
-		
-		$this->_lastError    = '';
-		$this->_allowedPaths = new AllowedPaths($wgXML2WikiAllowdPaths, $wgXML2WikiConfig['allowedpathsrecursive']);
 
+		$this->_lastError    = '';
+		$this->_debugEnabled = false;
+		$this->_allowedPaths = new X2WAllowedPaths($wgXML2WikiAllowdPaths, $wgXML2WikiConfig['allowedpathsrecursive']);
+		$this->_xmls         = array();
+
+		/*
+		 * Getting current directory.
+		 */
 		$this->_localDirectory = dirname(__FILE__);
 
 		/*
@@ -75,94 +104,141 @@ class Xml2Wiki extends SpecialPage {
 		wfLoadExtensionMessages('xml2wiki');
 
 		/*
-		 * Clearing status.
-		 */
-		$this->clear();
-
-		/*
 		 * Setting tag-kooks.
 		 */
 		if(defined('MEDIAWIKI')) {
+			global	$wgHooks;
 			global	$wgParser;
-			$wgParser->setHook('xml2wiki', array(&$this, 'parse'));
+
+			$wgParser->setHook('xml2wiki', array(&$this, 'parseSimpleTag'));
+			if(defined(get_class($wgParser).'::SFH_OBJECT_ARGS')) {
+				# Add a hook to initialise the magic word.
+				$wgHooks['LanguageGetMagic'][] = "wfXml2WikiLanguageGetMagic";
+
+				$wgParser->setFunctionHook('x2w', array(&$this, 'parseMasterTag'),  SFH_OBJECT_ARGS);
+			}
 		}
 	}
-	
+	/**
+	 * Checks allowed paths.
+	 * @param $path Path to check.
+	 * @return Returns true if it's an allowed path.
+	 */
+	public function checkAllowPath($path) {
+		return $this->_allowedPaths->check($path);
+	}
+	/**
+	 * Checks if the PHP module SimpleXML is loaded.
+	 * @return Returns true if it's present.
+	 */
+	public function checkSimpleXML() {
+		$out = true;
+
+		$mods  = get_loaded_extensions();
+		$modsL = count($mods);
+		$found = false;
+		for($i=0; $i<$modsL && !$found; $i++) {
+			if(strtolower($mods[$i]) == "simplexml") {
+				$found = true;
+			}
+		}
+		if(!$found) {
+			$this->setLastError($this->formatErrorMessage(wfMsg('simplexml-required')));
+			$out = false;
+		}
+
+		return $out;
+	}
+	public function debugEnabled() {
+		return $this->_debugEnabled;
+	}
+	/**
+	 * Inherited method. Please check parent class 'SpecialPage'.
+	 */
 	public function execute($par) {
 		global	$wgRequest;
 		global	$wgOut;
-		
+
 		$this->setHeaders();
- 
+
 		/*
 		 * Get request data from, e.g.
 		 */
 		$param = $wgRequest->getText('param');
- 
+
 		# Do stuff
 		# ...
 		$output = $this->getInfo();
 		$wgOut->addWikiText($output);
 	}
-
+	public function formatDebugMessage($message, $force=false) {
+		if($this->debugEnabled() || $force) {
+			return "<span style=\"color:purple;\">".$this->DEBUG_PREFIX."$message</span><br/>\n";
+		} else {
+			return '';
+		}
+	}
+	public function formatErrorMessage($message) {
+		return "<span style=\"color:red;font-weight:bold;\">".$this->ERROR_PREFIX."$message</span>";
+	}
 	/**
-	 * Tag Interpreter.
+	 * This method allows the get a full path for a file. It's able to
+	 * distinguish between a system file and a mediawiki file (this means
+	 * something like [[File:...]].
+	 * This method also checks if it's an allowed path or not.
+	 * @param string $in File path.
+	 * @return Returns a full-path. On error, return an empty string and
+	 * sets the proper error message.
 	 */
-	public function parse($input, $params, $parser) {
-		$out = '';
+	public function getFilePath($in) {
+		$out = "";
 
 		global	$wgUploadDirectory;
 
-		$this->clear();
-		$this->loadVariables($input);
-
-		if($this->_filename) {
-			$filepath = $this->getFilePath($this->_filename);
-			if(!$filepath) {
-				$out = $this->_lastError;
-			}
-			if(!$out && $this->_translator) {
-				$tfilepath = $this->getFilePath($this->_translator);
-				if($tfilepath) {
-					$out = $this->loadTranslations($tfilepath);
-				} else {
-					$out = $this->_lastError;
-				}
-			}
-			if(!$out) {
-				if(is_readable($filepath)) {
-					$this->_data = file_get_contents($filepath);
-					switch(strtolower($this->_style)) {
-						case 'code':
-							$out = $this->showAsCode();
-							break;
-						case 'direct':
-							$out = $this->showAsDirect();
-							break;
-						case 'pre':
-						case '':
-							$out = $this->showAsPre();
-							break;
-						case 'list':
-							$out = $this->showAsList();
-							break;
-						case 'table':
-							$out = $this->showAsTable();
-							break;
-						default:
-							$out = $this->_lastError = $this->formatErrorMessage(wfMsg('unknown-style',$this->_style));
-					}
-				} else {
-					$out = $this->_lastError = $this->formatErrorMessage(wfMsg('forbbidenfile',$filepath));
-				}
+		/*
+		 * Replacing doble-slashes.
+		 */
+		while(strpos($in, DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR)) {
+			$in = str_replace(DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR, $in);
+		}
+		/*
+		 * Checking if it's a mediawiki file or not.
+		 */
+		if(preg_match('/^File:/i', $in)) {
+			/*
+			 * Getting file information.
+			 * @{
+			 */
+			$aux = explode(':', $in);
+			$obj = wfFindFile(Title::makeTitle(NS_IMAGE, $aux[1]));
+			/* @} */
+			/*
+			 * Checking if it's available and generating absolute
+			 * path to be returned.
+			 */
+			if($obj) {
+				$out = $wgUploadDirectory.DIRECTORY_SEPARATOR.$obj->getRel();
+			} else {
+				$this->_lastError = $this->formatErrorMessage(wfMsg('forbbidenwfile',$aux[1],Title::makeTitle(NS_SPECIAL,'Upload')->escapeFullURL("wpDestFile={$aux[1]}")));
 			}
 		} else {
-			$out = $this->_lastError = $this->formatErrorMessage(wfMsg('nofilename'));
+			/*
+			 * Checking if it is an allowed path.
+			 */
+			if($this->checkAllowPath($in)) {
+				$out = $in;
+			} else {
+				$this->_lastError = $this->formatErrorMessage(wfMsg('notallowedpath',$in));
+			}
 		}
 
 		return $out;
 	}
-
+	/**
+	 * This method is directly related to the special page Special:Xml2wiki.
+	 * It generates the informatión to be shown into the special page.
+	 * @return Returns the text to be shown.
+	 */
 	public function getInfo() {
 		$out = "";
 
@@ -170,8 +246,13 @@ class Xml2Wiki extends SpecialPage {
 		global	$wgXML2WikiConfig;
 		global	$wgParser;
 
-		$tags = $wgParser->getTags();
-		
+		$tags   = $wgParser->getTags();
+		$mwords = $wgParser->getFunctionHooks();
+
+		/*
+		 * Section: Extension information.
+		 * @{
+		 */
 		$out.= "\t\t<h2>".wfMsg('sinfo-extension-information')."</h2>\n";
 		$out.= "\t\t<ul>\n";
 		$out.= "\t\t\t<li><strong>".wfMsg('sinfo-name').":</strong> ".Xml2Wiki::Property('name')."</li>\n";
@@ -195,7 +276,29 @@ class Xml2Wiki extends SpecialPage {
 		$out.= "\t\t\t\t<li><strong>".wfMsg('sinfo-svn-date').":</strong> {$aux}</li>\n";
 		$out.= "\t\t\t</ul></li>\n";
 		$out.= "\t\t</ul>\n";
-
+		/* @} */
+		/*
+		 * Section: Extension Status
+		 * @{
+		 */
+		$out.= "\t\t<h2>".wfMsg('sinfo-status')."</h2>\n";
+		$out.= "\t\t<table class=\"wikitable\">\n";
+		$out.= "\t\t\t<tr>\n";
+		$out.= "\t\t\t\t<th>".wfMsg('tag','xml2wiki')."</th>\n";
+		$out.= "\t\t\t\t<td>".(in_array('xml2wiki', $tags)?wfMsg('present'):wfMsg('not-present'))."</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th>".wfMsg('magicword','#x2w')."</th>\n";
+		$out.= "\t\t\t\t<td>".(in_array('x2w', $mwords)?wfMsg('present'):wfMsg('not-present'))."</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th>".get_class($wgParser)."::SFH_OBJECT_ARGS</th>\n";
+		$out.= "\t\t\t\t<td>".(defined(get_class($wgParser).'::SFH_OBJECT_ARGS')?wfMsg('present'):wfMsg('not-present'))."</td>\n";
+		$out.= "\t\t\t</tr>\n";
+		$out.= "\t\t</table>\n";
+		/* @} */
+		/*
+		 * Section: Allowed Paths
+		 * @{
+		 */
 		$out.= "\t\t<h2>".wfMsg('sinfo-allowed-paths')."</h2>\n";
 		if($wgXML2WikiConfig['showallowpaths']) {
 			$out.= "\t\t<table class=\"wikitable\">\n";
@@ -251,14 +354,22 @@ class Xml2Wiki extends SpecialPage {
 		} else {
 			$out.= "\t\t<p>".wfMsg('sinfo-information-disabled').".</p>\n";
 		}
-
+		/* @} */
+		/*
+		 * Section: System Information
+		 * @{
+		 */
 		if($wgXML2WikiConfig['showsysinfo']) {
 			$out.= "\t\t<h2>".wfMsg('sinfo-system-information')."</h2>\n";
 			$out.= "\t\t<ul>\n";
 			$out.= "\t\t\t<li><strong>".wfMsg('sinfo-php-version').":</strong> ".phpversion()."</li>\n";
 			$out.= "\t\t</ul>\n";
 		}
-
+		/* @} */
+		/*
+		 * Section: Modules
+		 * @{
+		 */
 		$out.= "\t\t<h2>".wfMsg('sinfo-modules')."</h2>\n";
 		if($wgXML2WikiConfig['showmodules']) {
 			$out.= "\t\t<ul>\n";
@@ -267,7 +378,11 @@ class Xml2Wiki extends SpecialPage {
 		} else {
 			$out.= "\t\t<p>".wfMsg('sinfo-information-disabled').".</p>\n";
 		}
-
+		/* @} */
+		/*
+		 * Section: Required Extensions
+		 * @{
+		 */
 		$out.= "\t\t<h2>".wfMsg('sinfo-required-extensions')."</h2>\n";
 		$out.= "\t\t<ul>\n";
 		$tag = "";
@@ -276,9 +391,13 @@ class Xml2Wiki extends SpecialPage {
 		} elseif(in_array('source', $tags)) {
 			$tag = 'source';
 		}
-		$out.= "\t\t\t<li><strong>SyntaxHighlight:</strong> ".($tag?wfMsg('sinfo-is-installed-tag', $tag):wfMsg('sinfo-not-installed'))."</li>\n";
+		$out.= "\t\t\t<li><strong>SyntaxHighlight:</strong> ".($tag?wfMsg('sinfo-is-installed-tag', $tag):wfMsg('sinfo-not-installed')."(".wfMsg('stylecode-extension2').")")."</li>\n";
 		$out.= "\t\t</ul>\n";
-
+		/* @} */
+		/*
+		 * Section: Configuration
+		 * @{
+		 */
 		$out.= "\t\t<h2>".wfMsg('sinfo-configs')."</h2>\n";
 		$out.= "\t\t<table class=\"wikitable\">\n";
 		$out.= "\t\t\t<tr>\n";
@@ -315,391 +434,180 @@ class Xml2Wiki extends SpecialPage {
 		$out.= "\t\t\t</tr><tr>\n";
 		$out.= "\t\t\t\t<th colspan=\"2\">".wfMsg('sinfo-allowedpathsrecursive')."</th>\n";
 		$out.= "\t\t\t\t<td>\"".($wgXML2WikiConfig['allowedpathsrecursive']?wfMsg('enabled'):wfMsg('disabled'))."\"</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th colspan=\"2\">".wfMsg('sinfo-allownocache')."</th>\n";
+		$out.= "\t\t\t\t<td>\"".($wgXML2WikiConfig['allownocache']?wfMsg('enabled'):wfMsg('disabled'))."\"</td>\n";
 		$out.= "\t\t\t</tr>\n";
 		$out.= "\t\t</table>\n";
-
+		/* @} */
+		/*
+		 * Section: Links
+		 * @{
+		 */
 		$out.= "\t\t<h2>".wfMsg('sinfo-links')."</h2>\n";
 		$out.= "\t\t<ul>\n";
 		$out.= "\t\t\t<li><strong>MediaWiki Extensions:</strong> http://www.mediawiki.org/wiki/Extension:XML2Wiki</li>\n";
 		$out.= "\t\t\t<li><strong>GoogleCode Proyect Site:</strong> https://code.google.com/p/xml2wiki-dr/</li>\n";
 		$out.= "\t\t</ul>\n";
+		/* @} */
 
 		return $out;
 	}
-
-	protected function getFilePath($in) {
-		$out = "";
-
-		global	$wgUploadDirectory;
-
-		while(strpos($in, DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR)) {
-			$in = str_replace(DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR, $in);
-		}
-		if(preg_match('/^File:/i', $in)) {
-			$aux = explode(':', $in);
-			$obj = wfFindFile(Title::makeTitle(NS_IMAGE, $aux[1]));
-			if($obj) {
-				$out = $wgUploadDirectory.DIRECTORY_SEPARATOR.$obj->getRel();
-			} else {
-				$this->_lastError = $this->formatErrorMessage(wfMsg('forbbidenwfile',$aux[1],Title::makeTitle(NS_SPECIAL,'Upload')->escapeFullURL("wpDestFile={$aux[1]}")));
-			}
-		} else {
-			if($this->checkAllowPath($in)) {
-				$out = $in;
-			} else {
-				$this->_lastError = $this->formatErrorMessage(wfMsg('notallowedpath',$in));
-			}
-		}
-
-		return $out;
+	/**
+	 * Gets last error message.
+	 * @return Returns the message.
+	 */
+	public function getLastError() {
+		return $this->_lastError;
 	}
-
-	protected function clear() {
-		if(isset($this->_auxTableData)) {
-			unset($this->_auxTableData);
-		}
-		if(isset($this->_translations)) {
-			unset($this->_translations['tags']);
-			unset($this->_translations['attrs']);
-			unset($this->_translations);
-		}
-
-		$this->_auxTableData = array(
-						'maxcols' => 1,
-						'maxrows' => 1,
-						'cells'   => array()
-		);
-		$this->data          = '';
-		$this->_class        = '';
-		$this->_filename     = '';
-		$this->_lastError    = '';
-		$this->_showAttrs    = false;
-		$this->_translations = array(
-						'tags'  => array(),
-						'attrs' => array()
-		);
-		$this->_translator   = '';
-	}
-
-	protected function loadVariables($input) {
-		$this->_class      = $this->getVariable($input, 'class');
-		$this->_filename   = $this->getVariable($input, 'file');
-		$this->_translator = $this->getVariable($input, 'translator');
-		$this->_style      = $this->getVariable($input, 'style');
-
-		$aux = strtolower($this->getVariable($input, 'showattrs'));
-		$this->_showAttrs = ($aux == 'on');
-	}
-
-	protected function checkAllowPath($path) {
-		return $this->_allowedPaths->check($path);
-	}
-
-	protected function loadTranslations($filepath) {
-		$out = "";
-
-		$this->_lastError = "";
-		if($this->checkSimpleXML()) {
-			$xml = @simplexml_load_file($filepath);
-			if($xml) {
-				if($xml->getName() == 'translations') {
-					foreach($xml as $t) {
-						if($t->getName() == 'translation') {
-							if(isset($t->tag) && isset($t->means)) {
-								$this->_translations['tags']["{$t->tag}"] = "{$t->means}";
-							} elseif(isset($t->attribute) && isset($t->means)) {
-								$this->_translations['attrs']["{$t->attribute}"] = "{$t->means}";
-							} else {
-								$out = $this->_lastError = $this->formatErrorMessage(wfMsg('badtxml'));
-								break;
-							}
-						} else {
-							$out = $this->_lastError = $this->formatErrorMessage(wfMsg('badtxml',$t->getName()));
-							break;
-						}
-					}
-				} else {
-					$out = $this->_lastError = $this->formatErrorMessage(wfMsg('badtxml',$xml->getName()));
-				}
-				unset($xml);
-			} else {
-				$out = $this->_lastError = $this->formatErrorMessage(wfMsg('xml-noparsing',$filepath));
-			}
-		} else {
-			$out = $this->_lastError;
-		}
-
-		return $out;
-	}
-
-	protected function showAsCode() {
+	/**
+	 * @todo doc.
+	 * @{
+	 */
+	public function parseMasterTag(&$parser, $frame, $args) {
+		/*
+		 * This variable will hold the content to be retorned. Eighter
+		 * some formatted XML text or an error message.
+		 */
 		$out = '';
 
-		global	$wgParser;
-		$tags = $wgParser->getTags();
-		$tag  = '';
-		$hook = NULL;
-
-		if(in_array('syntaxhighlight', $tags)) {
-			$tag = 'syntaxhighlight';
-		} elseif(in_array('source', $tags)) {
-			$tag = 'source';
-		}
-
-		if(!$tag) {
-			$out = $this->_lastError = $this->formatErrorMessage(wfMsg('stylecode-extension'));
-		} else {
-			$out = $wgParser->recursiveTagParse("<$tag lang=\"xml\">{$this->_data}</$tag>");
-			$out = "<div class=\"Xml2Wiki_code\">".$out."</div>";
+		$command = trim(strtolower(isset($args[0])?$frame->expand($args[0]):''));
+		switch($command) {
+			case 'value':
+				$out.= $this->cmdValue($parser, $frame, $args);
+				break;
+			case 'load':
+				$out.= $this->cmdLoad($parser, $frame, $args);
+				break;
+			case 'debug':
+				$out.= $this->cmdDebug($parser, $frame, $args);
+				break;
+			case 'nocache':
+				$out.= $this->cmdNoCache($parser, $frame, $args);
+				break;
+			default:
+				$out.= $this->setLastError($this->formatErrorMessage(wfMsg('x2w-default',$command)));
+				break;
 		}
 
 		return $out;
 	}
-	protected function showAsDirect() {
-		return "<div class=\"Xml2Wiki_direct\">".htmlspecialchars($this->_data)."</div>";
+	/** @} */
+	/**
+	 * Tag Interpreter.
+	 * This method is in charge of analyzing and generating the output
+	 * content for tags <xml2wiki> and </xml2wiki>.
+	 */
+	public function parseSimpleTag($input, $params, $parser) {
+		/*
+		 * This variable will hold the content to be retorned. Eighter
+		 * some formatted XML text or an error message.
+		 */
+		$out = '';
+		$simpleTagParser = new X2WParser();
+
+		$this->setLastError();
+		$out.= $simpleTagParser->loadFromTags($input, $params, $parser);
+		if(!$this->getLastError()) {
+			$out.= $simpleTagParser->show();
+		}
+
+		return $out;
 	}
-	protected function showAsList() {
-		$out = "";
+	public function setDebugEnabled($enabled=true) {
+		return $this->_debugEnabled = $enabled;
+	}
+	/**
+	 * Sets last error message.
+	 * @param string $msg Message to set.
+	 * @return Returns the message set.
+	 */
+	public function setLastError($msg="") {
+		$this->_lastError = $msg;
+		return $this->getLastError();
+	}
+	public function varDefault($name) {
+		return (isset($this->_varDefaults[$name])?$this->_varDefaults[$name]:'');
+	}
 
-		$this->_lastError = "";
-		if($this->checkSimpleXML()) {
-			$out = "<div class=\"Xml2Wiki_list\">\n";
+	protected function cmdDebug(&$parser, $frame, $args) {
+		$out = '';
+		$aux = trim(strtolower(isset($args[1])?$frame->expand($args[1]):''));
+		switch($aux) {
+			case 'off':
+			case 'false':
+				$this->setDebugEnabled(false);
+				break;
+			case 'toggle':
+				$this->setDebugEnabled(!$this->debugEnabled());
+				break;
+			default:
+				$this->setDebugEnabled(true);
+		}
+		$out.= $this->formatDebugMessage('Debug Enabled');
+		return $out;
+	}
+	protected function cmdLoad(&$parser, $frame, $args) {
+		$out = '';
 
-			$xml = simplexml_load_string($this->_data);
-			$out.= "\t<span class=\"MainItem\">".$this->translate($xml->getName())."</span><ul>\n";
+		$id    = trim(strtolower(isset($args[1])?$frame->expand($args[1]):''));
+		$xml   = trim(isset($args[2])?$frame->expand($args[2]):'');
+		$trans = trim(isset($args[3])?$frame->expand($args[3]):'');
 
-			if(count($xml->children())) {
-				foreach($xml->children() as $child) {
-					$out.= $this->showAsListChild($child);
-				}
+		$out.= $this->formatDebugMessage("Loading XML: id = '{$id}'");
+		$out.= $this->formatDebugMessage("Loading XML: file = '{$xml}'");
+
+		if(!isset($this->_xmls[$id])) {
+			$conf = array('file' => $xml);
+			/*
+			 *	- class
+			 *	- file
+			 *	- translator
+			 *	- style
+			 *	- showattrs
+			 *	- class
+			 *	- debug
+			 */
+			$this->setLastError();
+			$aux = new X2WParser();
+			$out.= $aux->loadFromList($conf);
+			if(!$this->getLastError()) {
+				$this->_xmls[$id] = $aux;
+				$out.= $this->formatDebugMessage("XML with ID '{$id}' added");
 			}
-
-			unset($xml);
-
-			$out.= "\t</ul>\n";
-			$out.= "</div>\n";
 		} else {
-			$out = $this->_lastError;
+			$out.= $this->setLastError($this->formatErrorMessage(wfMsg('x2w-load-duplicated-id',$id)));
 		}
 
 		return $out;
 	}
-	protected function showAsListChild(&$child, $level=1, $space="\t\t") {
-		$out = "";
+	protected function cmdNoCache(&$parser, $frame, $args) {
+		$out = '';
 
 		global	$wgXML2WikiConfig;
 
-		if(count($child->children())) {
-			foreach($child->children() as $c) {
-				$out.= "{$space}<li class=\"ItemLevel{$level}\"><span class=\"ItemName\">".$this->translate($child->getName())."</span><ul>\n";
-				$out.= $this->showAsListChild($c, $level+1, $space."\t");
-				$out.= "{$space}</ul></li>\n";
-			}
+		if($wgXML2WikiConfig['allownocache']) {
+			$parser->disableCache();
+			$out.= $this->formatDebugMessage("Cache disabled");
 		} else {
-			$value = "{$child}";
-			$out  .= "{$space}<li class=\"ItemLevel{$level}\">\n";
-			$out  .= "{$space}\t<span class=\"ItemName\">".$this->translate($child->getName()).($value?":":"")."</span>\n";
-			$out  .= "{$space}\t<span class=\"ItemValue\">$value</span>\n";
-			if($this->_showAttrs && count($child->attributes())) {
-				$out  .= "{$space}\t<ul>\n";
-				foreach($child->attributes() as $attr => $val) {
-					$tattr = $this->translate("{$attr}",true);
-
-					$out.= "{$space}\t\t<li>\n";
-					if($tattr != $attr) {
-						$out.= "{$space}\t\t\t<span class=\"ItemAttrName\">{$wgXML2WikiConfig['transattributesprefix']}{$tattr}{$wgXML2WikiConfig['transattributessuffix']}</span>\n";
-					} else {
-						$out.= "{$space}\t\t\t<span class=\"ItemAttrName\">{$wgXML2WikiConfig['attributesprefix']}{$attr}{$wgXML2WikiConfig['attributessuffix']}</span>\n";
-					}
-					$out.= "{$space}\t\t\t<span class=\"ItemAttrValue\">$val</span>\n";
-					$out.= "{$space}\t\t</li>\n";
-				}
-				$out  .= "{$space}\t</ul>\n";
-			}
-			$out.= "{$space}</li>\n";
+			$out.= $this->formatDebugMessage("Disable cache action is forbidden by configuration.");
 		}
 
 		return $out;
 	}
-	protected function showAsPre() {
-		return "<div class=\"Xml2Wiki_pre\"><pre>".htmlspecialchars($this->_data)."</pre></div>";
-	}
-	protected function showAsTable() {
-		$out = "";
+	protected function cmdValue(&$parser, $frame, $args) {
+		$out = '';
 
-		$this->_lastError = "";
-		if($this->checkSimpleXML()) {
-			$out.= "<div class=\"Xml2Wiki_table\">\n";
-			$out.= "\t<table class=\"{$this->_class}\">\n";
+		$id  = trim(strtolower(isset($args[1])?$frame->expand($args[1]):''));
+		$cmd = trim(isset($args[2])?$frame->expand($args[2]):'');
 
-			$xml  = simplexml_load_string($this->_data);
-			$tree = $this->showAsTableChild($xml);
-			$aux  = $this->showAsTableTreeDig($tree);
-			$this->_auxTableData['maxrows'] = $tree['rows'];
-			$out.= "\t\t<tr>\n";
-			$out.= "\t\t\t<th colspan=\"{$this->_auxTableData['maxcols']}\">".$this->translate($xml->getName())."</th>\n";
-			$out.= "\t\t</tr>\n";
-			for($y=1; $y<=$this->_auxTableData['maxrows']; $y++) {
-				$out.= "\t\t<tr>\n";
-				for($x=1, $colSpan=$this->_auxTableData['maxcols']; $x<=$this->_auxTableData['maxcols']; $x++, $colSpan--) {
-					$id     = "{$x}-{$y}";
-					if(isset($this->_auxTableData['cells'][$id])) {
-						$cell = $this->_auxTableData['cells'][$id];
-						if(isset($cell['value'])) {
-							$out.= "\t\t\t<th rowspan=\"{$cell['rows']}\">{$cell['title']}</th>\n";
-							$out.= "\t\t\t<td colspan=\"".($colSpan-1)."\">{$cell['value']}</td>\n";
-						} elseif(isset($cell['nochildren'])) {
-							$out.= "\t\t\t<td class=\"NoText\" colspan=\"2\" rowspan=\"{$cell['rows']}\">{$cell['title']}</td>\n";
-						} else {
-							$out.= "\t\t\t<th rowspan=\"{$cell['rows']}\">{$cell['title']}</th>\n";
-						}
-					}
-				}
-				$out.= "\t\t</tr>\n";
-			}
-			unset($xml);
-
-			$out.= "\t</table>\n";
-			$out.= "</div>\n";
+		if(isset($this->_xmls[$id])) {
+			$out.= $this->_xmls[$id]->runCommand($cmd);
 		} else {
-			$out = $this->_lastError;
+			$out.= $this->setLastError($this->formatErrorMessage(wfMsg('x2w-load-no-id',$id)));
 		}
 
 		return $out;
-	}
-	protected function showAsTableChild(&$child, $level=1, $space="\t\t") {
-		$tree = array(
-				'level' => $level,
-				'space' => $space,
-				'title' => $this->translate($child->getName())
-		);
-		if(count($child->children())) {
-			foreach($child->children() as $c) {
-				$aux = $this->showAsTableChild($c, $level+1, $space."\t");
-				$tree[] = $aux;
-			}
-		} else {
-			$value  = "{$child}";
-			if($value) {
-				$tree[] = $value;
-			}
-		}
-
-		return $tree;
-	}
-	protected function showAsTableTreeDig(&$tree, $maxcols=0, &$x=0, &$y=1) {
-		$maxcols++;
-		if($this->_auxTableData['maxcols'] < $maxcols) {
-			$this->_auxTableData['maxcols'] = $maxcols;
-		}
-
-		$tree['x'] = $x;
-		$tree['y'] = $y;
-		$cellId    = "{$tree['x']}-{$tree['y']}";
-		$this->_auxTableData['cells'][$cellId] = array();
-
-		$cols        = 0;
-		$rows        = 0;
-		$hasNumerics = false;
-		foreach($tree as $k => $c) {
-			if(is_numeric($k)) {
-				$rows++;
-				$hasNumerics = true;
-				if(is_array($c)) {
-					$x++;
-					$r = $this->showAsTableTreeDig($c, $maxcols, $x, $y);
-					$y++;
-					$x--;
-					$tree[$k] = $c;
-
-					if($r > 1) {
-						$rows+=$r-1;
-					}
-				}
-			}
-		}
-		if(!$hasNumerics) {
-			$cols = 2;
-			$rows = 1;
-			$y--;
-			$tree['nochildren'] = 'NOCHILDREN';
-			$this->_auxTableData['cells'][$cellId]['nochildren'] = 'NOCHILDREN';
-		} else {
-			if(!is_array($tree[0])) {
-				$this->_auxTableData['cells'][$cellId]['value'] = "{$tree[0]}";
-			}
-			$cols = 1;
-		}
-		$tree['cols'] = $cols;
-		$tree['rows'] = $rows;
-
-		$this->_auxTableData['cells'][$cellId]['title'] = $tree['title'];
-		$this->_auxTableData['cells'][$cellId]['cols']  = $tree['cols'];
-		$this->_auxTableData['cells'][$cellId]['rows']  = $tree['rows'];
-		$this->_auxTableData['cells'][$cellId]['level'] = $tree['level'];
-		$this->_auxTableData['cells'][$cellId]['space'] = $tree['space'];
-
-		return $rows;
-	}
-
-	/**
-	 * Return parameters from mediaWiki;
-	 *	use Default if parameter not provided;
-	 *	use '' or 0 if Default not provided
-	 */
-	protected function getVariable($input, $name, $isNumber=false) {
-		if(isset($this->_varDefaults[$name])) {
-			$out = $this->_varDefaults[$name];
-		} else {
-			$out = ($isNumber) ? 0 : '';
-		}
-
-		if(preg_match("/^\s*$name\s*=\s*(.*)/mi", $input, $matches)) {
-			if($isNumber) {
-				$out = intval($matches[1]);
-			} elseif($matches[1] != null) {
-				$out = htmlspecialchars($matches[1]);
-			}
-		}
-
-		return $out;
-	}
-
-	protected function translate($name, $isAttr=false) {
-		$out = $name;
-		if($isAttr) {
-			if(isset($this->_translations['attrs'][$name])) {
-				$out = $this->_translations['attrs'][$name];
-			}
-		} else {
-			if(isset($this->_translations['tags'][$name])) {
-				$out = $this->_translations['tags'][$name];
-			}
-		}
-		return $out;
-	}
-
-	protected function checkSimpleXML() {
-		$out = true;
-
-		$mods  = get_loaded_extensions();
-		$modsL = count($mods);
-		$found = false;
-		for($i=0; $i<$modsL && !$found; $i++) {
-			if(strtolower($mods[$i]) == "simplexml") {
-				$found = true;
-			}
-		}
-		if(!$found) {
-			$this->_lastError = $this->formatErrorMessage(wfMsg('simplexml-required'));
-			$out = false;
-		}
-
-		return $out;
-	}
-
-	protected function formatErrorMessage($message) {
-		return "<span style=\"color:red;font-weight:bold;\">".Xml2Wiki::$ERROR_PREFIX."$message</span>";
 	}
 
 	public static function Instance() {
@@ -708,6 +616,7 @@ class Xml2Wiki extends SpecialPage {
 		}
 		return Xml2Wiki::$_Instance;
 	}
+
 	public static function Property($name) {
 		$name = strtolower($name);
 		if(!isset(Xml2Wiki::$_Properties[$name])) {
