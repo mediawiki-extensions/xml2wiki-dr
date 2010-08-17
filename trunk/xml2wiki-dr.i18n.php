@@ -144,11 +144,4 @@ $messages['es'] = array(
 	'sinfo-xml2wiki-desc'		=> 'XML to Wiki \'\'página especial\'\'. Visite [[Special:Xml2Wiki]]',
 );
 
-function wfXml2WikiLanguageGetMagic(&$magicWords, $langCode="en") {
-	switch($langCode) {
-                default:
-		$magicWords['x2w'] = array(0, 'x2w');
-	}
-	return true;
-}
 ?>

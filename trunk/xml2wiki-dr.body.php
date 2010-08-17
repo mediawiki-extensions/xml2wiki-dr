@@ -17,6 +17,19 @@ require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATO
 require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'X2WParser.php');
 
 /**
+ * @todo doc
+ * @param unknown_type $magicWords
+ * @param unknown_type $langCode
+ */
+function wfXml2WikiLanguageGetMagic(&$magicWords, $langCode="en") {
+	switch($langCode) {
+		default:
+			$magicWords['x2w'] = array(0, 'x2w');
+	}
+	return true;
+}
+
+/**
  * @class Xml2Wiki
  */
 class Xml2Wiki extends SpecialPage {
@@ -114,7 +127,7 @@ class Xml2Wiki extends SpecialPage {
 			if(defined(get_class($wgParser).'::SFH_OBJECT_ARGS')) {
 				# Add a hook to initialise the magic word.
 				$wgHooks['LanguageGetMagic'][] = "wfXml2WikiLanguageGetMagic";
-
+				
 				$wgParser->setFunctionHook('x2w', array(&$this, 'parseMasterTag'),  SFH_OBJECT_ARGS);
 			}
 		}
