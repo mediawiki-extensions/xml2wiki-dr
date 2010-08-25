@@ -15,8 +15,8 @@
 /**
  * Arrays.
  */
-if(!isset($wgXML2WikiAllowdPaths)) {
-	$wgXML2WikiAllowdPaths = array();
+if(!isset($wgXML2WikiAllowedPaths)) {
+	$wgXML2WikiAllowedPaths = array();
 }
 if(!isset($wgXML2WikiConfig)) {
 	$wgXML2WikiConfig = array();
@@ -24,8 +24,11 @@ if(!isset($wgXML2WikiConfig)) {
 
 /**
  * Allowed Directories.
+ * @{
  */
-$wgXML2WikiAllowdPaths[] = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR.'xmls';
+$wgXML2WikiAllowedPaths[]  = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR.'xmls';
+$wgXML2WikiEditablePaths[] = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR.'xmls';
+/** @} */
 
 /**
  * Configuration.
@@ -55,8 +58,27 @@ $wgXML2WikiConfig['transattributessuffix'] = '';
  * Path Checks
  *	@{
  */
-$wgXML2WikiConfig['allowedpathsrecursive'] = false;
+$wgXML2WikiConfig['allowedpathsrecursive']  = false;
+$wgXML2WikiConfig['editablepathsrecursive'] = false;
 /**	@} */
+
+/**
+ * Others
+ *	@{
+ */
 $wgXML2WikiConfig['allownocache']          = true;
+$wgXML2WikiConfig['ajaxseparator']         = '__SEPARATOR__';
+/**	@} */
+
+/**
+ * Permissions
+ *	@{
+ */
+$wgGroupPermissions['*']['x2w-tableedit']          = false;
+$wgGroupPermissions['user']['x2w-tableedit']       = true;
+$wgGroupPermissions['bot']['x2w-tableedit']        = false;
+$wgGroupPermissions['sysop']['x2w-tableedit']      = true;
+$wgGroupPermissions['bureaucrat']['x2w-tableedit'] = false;
+/**	@} */
 /** @} */
 ?>

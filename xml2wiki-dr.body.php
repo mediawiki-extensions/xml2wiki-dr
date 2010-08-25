@@ -83,6 +83,7 @@ class Xml2Wiki extends SpecialPage {
 	 * @var X2WAllowedPaths
 	 */
 	protected	$_allowedPaths;
+	protected	$_editablePaths;
 	protected	$_debugEnabled = false;
 	protected	$_localDirectory;
 	protected	$_lastError;
@@ -98,13 +99,15 @@ class Xml2Wiki extends SpecialPage {
 	public function __construct() {
 		parent::__construct('xml2wiki');
 
-		global	$wgXML2WikiAllowdPaths;
+		global	$wgXML2WikiAllowedPaths;
+		global	$wgXML2WikiEditablePaths;
 		global	$wgXML2WikiConfig;
 
-		$this->_lastError    = '';
-		$this->_debugEnabled = false;
-		$this->_allowedPaths = new X2WAllowedPaths($wgXML2WikiAllowdPaths, $wgXML2WikiConfig['allowedpathsrecursive']);
-		$this->_xmls         = array();
+		$this->_lastError     = '';
+		$this->_debugEnabled  = false;
+		$this->_allowedPaths  = new X2WAllowedPaths($wgXML2WikiAllowedPaths,  $wgXML2WikiConfig['allowedpathsrecursive']);
+		$this->_editablePaths = new X2WAllowedPaths($wgXML2WikiEditablePaths, $wgXML2WikiConfig['editablepathsrecursive']);
+		$this->_xmls          = array();
 
 		/*
 		 * Getting current directory.
@@ -139,6 +142,14 @@ class Xml2Wiki extends SpecialPage {
 	 */
 	public function checkAllowPath($path) {
 		return $this->_allowedPaths->check($path);
+	}
+	/**
+	 * Checks editable paths.
+	 * @param $path Path to check.
+	 * @return Returns true if it's an editable path.
+	 */
+	public function checkEditablePath($path) {
+		return $this->_editablePaths->check($path);
 	}
 	/**
 	 * Checks if the PHP module SimpleXML is loaded.
@@ -255,7 +266,8 @@ class Xml2Wiki extends SpecialPage {
 	public function getInfo() {
 		$out = "";
 
-		global	$wgXML2WikiAllowdPaths;
+		global	$wgXML2WikiAllowedPaths;
+		global	$wgXML2WikiEditablePaths;
 		global	$wgXML2WikiConfig;
 		global	$wgParser;
 
@@ -560,6 +572,12 @@ class Xml2Wiki extends SpecialPage {
 		$out.= $this->formatDebugMessage('Debug Enabled');
 		return $out;
 	}
+	/**
+	 * @todo doc
+	 * @param Parser $parser @todo doc
+	 * @param unknown_type $frame @todo doc
+	 * @param array $args @todo doc
+	 */
 	protected function cmdLoad(&$parser, $frame, $args) {
 		$out = '';
 
