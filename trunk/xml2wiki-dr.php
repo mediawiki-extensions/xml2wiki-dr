@@ -21,6 +21,16 @@ require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'xml2wiki-dr.body.php');
 function Xml2Wiki_Hooker() {
 	Xml2Wiki::Instance();
 }
+function Xml2Wiki_HeadHooker(&$out, &$sk) {
+	global	$wgScriptPath;
+	global	$wgUseAjax;
+
+	if($wgUseAjax) {
+		$script = $wgScriptPath.'/extensions/'.basename(dirname(__FILE__)).'/includes/xml2wiki.js.php';
+		$out->addScript('<script type="text/javascript" src="'.$script.'"></script>');
+	}
+	return true;
+}
 
 if(!defined('MEDIAWIKI')) {
 	die();
@@ -29,6 +39,8 @@ if(!defined('MEDIAWIKI')) {
 	 * MediaWiki Extension hooks Setter.
 	 */
 	$wgExtensionFunctions[]               = 'Xml2Wiki_Hooker';
+	$wgHooks['BeforePageDisplay'][]       = 'Xml2Wiki_HeadHooker';
+	$wgAjaxExportList[]                   = 'X2WParser::AjaxParser';
 	$wgExtensionMessagesFiles['xml2wiki'] = dirname( __FILE__ ).DIRECTORY_SEPARATOR.'xml2wiki-dr.i18n.php';
 
 	$wgAutoloadClasses  ['xml2wiki'] = dirname( __FILE__ ).DIRECTORY_SEPARATOR.'xml2wiki-dr.body.php';

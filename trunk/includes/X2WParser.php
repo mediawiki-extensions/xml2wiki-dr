@@ -16,11 +16,14 @@
  * @class X2WParser
  */
 class X2WParser {
+	protected static	$_ParserId = 0;
+
 	protected	$_x2wInstance;
 
 	protected	$_data;
 	protected	$_class;
 	protected	$_filename;
+	protected	$_isEditable;
 	protected	$_localDebugEnabled;
 	protected	$_showAttrs;
 	protected	$_style;
@@ -35,6 +38,7 @@ class X2WParser {
 	 */
 	public function __construct() {
 		$this->_x2wInstance = Xml2Wiki::Instance();
+		X2WParser::$_ParserId++;
 
 		$this->_localDebugEnabled = false;
 		/*
@@ -43,6 +47,66 @@ class X2WParser {
 		$this->clear();
 	}
 
+	public static function AjaxParser($params) {
+		$out = '';
+
+		global	$wgXML2WikiConfig;
+		Xml2Wiki::Instance();
+
+		$params   = explode($wgXML2WikiConfig['ajaxseparator'], $params);
+		$xml      = $params[0];
+		$value    = $params[1];
+		$oldValue = $params[2];
+		$position = $params[3];
+		$debug    = ($params[4] == 'true' ? 'on' : 'off');
+
+		$out = $value;
+
+		/*
+		 *	- class
+		 *	- file
+		 *	- translator
+		 *	- style
+		 *	- showattrs
+		 *	- class
+		 *	- debug
+		 */
+		$conf = array(	'file'  => $xml,
+				'debug' => $debug,
+		);
+		$x2wParser = new X2WParser();
+		$x2wParser->setLastError();
+		$x2wParser->loadFromList($conf);
+		if($x2wParser->getLastError()) {
+			if($x2wParser->debugEnabled()) {
+				$out = $x2wParser->getLastError().'<br/>'.$oldValue;
+			} else {
+				$out = $oldValue;
+			}
+		}
+
+		return $out;
+	}
+
+	public function debugEnabled() {
+		return ($this->_x2wInstance->debugEnabled() || $this->_localDebugEnabled);
+	}
+	public function isEditable() {
+		static	$permissions = false;
+		static	$firstCheck  = true;
+
+		if($firstCheck) {
+			$firstCheck = false;
+
+			global	$wgUseAjax;
+			if($wgUseAjax) {
+				global	$wgUser;
+				$permissions = in_array('x2w-tableedit', $wgUser->getRights());
+			}
+		}
+
+		return ($permissions && $this->_isEditable);
+	}
 	public function load() {
 		/*
 		 * This variable will hold the content to be retorned. Eighter
@@ -70,6 +134,12 @@ class X2WParser {
 			} else {
 				$out.=$this->formatDebugMessage("Loading XML from '{$filepath}'");
 			}
+
+			/*
+			 * Cheking if it is editable.
+			 */
+			$this->_isEditable = $this->_x2wInstance->checkEditablePath($filepath);
+			$out.=$this->formatDebugMessage("XML is ".($this->isEditable()?'':'not ')."editable");
 
 			/* @} */
 			/*
@@ -100,7 +170,7 @@ class X2WParser {
 				}
 			}
 		} else {
-			$out  .= $this->getLastError($this->formatErrorMessage(wfMsg('nofilename')));
+			$out  .= $this->setLastError($this->formatErrorMessage(wfMsg('nofilename')));
 			$error = true;
 		}
 
@@ -217,9 +287,8 @@ class X2WParser {
 						'attrs' => array()
 		);
 		$this->_translator   = '';
-	}
-	protected function debugEnabled() {
-		return ($this->_x2wInstance->debugEnabled() || $this->_localDebugEnabled);
+
+		$this->_isEditable = false;
 	}
 	protected function formatDebugMessage($msg) {
 		return $this->_x2wInstance->formatDebugMessage($msg, $this->_localDebugEnabled);
@@ -412,6 +481,8 @@ class X2WParser {
 	protected function showAsTable() {
 		$out = "";
 
+		global	$wgUseAjax;
+
 		$this->setLastError();
 		if($this->checkSimpleXML()) {
 			$out.= "<div class=\"Xml2Wiki_table\">\n";
@@ -432,7 +503,11 @@ class X2WParser {
 						$cell = $this->_auxTableData['cells'][$id];
 						if(isset($cell['value'])) {
 							$out.= "\t\t\t<th rowspan=\"{$cell['rows']}\">{$cell['title']}</th>\n";
-							$out.= "\t\t\t<td colspan=\"".($colSpan-1)."\">{$cell['value']}</td>\n";
+							if($this->isEditable()) {
+								$out.= "\t\t\t<td colspan=\"".($colSpan-1)."\" id=\"item_".X2WParser::$_ParserId."_{$x}_{$y}\" onClick=\"X2WEditValue('{$this->_filename}','item_".X2WParser::$_ParserId."_{$x}_{$y}',".($this->debugEnabled()?'true':'false').");\">{$cell['value']}</td>\n";
+							} else {
+								$out.= "\t\t\t<td colspan=\"".($colSpan-1)."\">{$cell['value']}</td>\n";
+							}
 						} elseif(isset($cell['nochildren'])) {
 							$out.= "\t\t\t<td class=\"NoText\" colspan=\"2\" rowspan=\"{$cell['rows']}\">{$cell['title']}</td>\n";
 						} else {
@@ -498,7 +573,11 @@ class X2WParser {
 					$tree[$k] = $c;
 
 					if($r > 1) {
-						$rows+=$r-1;
+						/*
+						 * bug-fix
+						 * @url https://code.google.com/p/xml2wiki-dr/issues/detail?id=1
+						 */
+						$rows+=$r;
 					}
 				}
 			}
