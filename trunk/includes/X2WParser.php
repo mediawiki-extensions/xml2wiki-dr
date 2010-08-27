@@ -255,6 +255,10 @@ class X2WParser {
 
 		return $out;
 	}
+
+	/*
+	 * Protected Methods.
+	 */
 	protected function checkSimpleXML() {
 		return $this->_x2wInstance->checkSimpleXML();
 	}
@@ -419,16 +423,14 @@ class X2WParser {
 		if($this->checkSimpleXML()) {
 			$out = "<div class=\"Xml2Wiki_list\">\n";
 
-			$xml = simplexml_load_string($this->_data);
-			$out.= "\t<span class=\"MainItem\">".$this->translate($xml->getName())."</span><ul>\n";
+			$this->loadXMLData();
+			$out.= "\t<span class=\"MainItem\">".$this->translate($this->_xmlData->getName())."</span><ul>\n";
 
-			if(count($xml->children())) {
-				foreach($xml->children() as $child) {
+			if(count($this->_xmlData->children())) {
+				foreach($this->_xmlData->children() as $child) {
 					$out.= $this->showAsListChild($child);
 				}
 			}
-
-			unset($xml);
 
 			$out.= "\t</ul>\n";
 			$out.= "</div>\n";
@@ -478,6 +480,68 @@ class X2WParser {
 	protected function showAsPre() {
 		return "<div class=\"Xml2Wiki_pre\"><pre>".htmlspecialchars($this->_data)."</pre></div>";
 	}
+	protected function showAsTable2() {
+		$out = "";
+
+		global	$wgUseAjax;
+
+		$this->setLastError();
+		if($this->checkSimpleXML()) {
+			$out.= "<div class=\"Xml2Wiki_table\">\n";
+			$out.= "\t<table class=\"{$this->_class}\">\n";
+
+			$this->loadXMLData();
+			$xmlSt = buildXMLStruct($this->_xmlData, null, null, true, true);
+			$this->_auxTableData['maxcols'] = $xmlSt['stat']['columns'];
+			$this->_auxTableData['maxrows'] = $xmlSt['stat']['rows'];
+			$this->_auxTableData['list']    = &$xmlSt['stat']['list'];
+			$out.= "\t\t<tr>\n";
+			$out.= "\t\t\t<th colspan=\"{$this->_auxTableData['maxcols']}\">".$this->translate($this->_xmlData->getName())."</th>\n";
+			$out.= "\t\t</tr>\n";
+			for($y=1; $y<=$this->_auxTableData['maxrows']; $y++) {
+				$out.= "\t\t<tr>\n";
+				for($x=1, $colSpan=$this->_auxTableData['maxcols']; $x<=$this->_auxTableData['maxcols']; $x++, $colSpan--) {
+					$id    = "{$y}-{$x}";
+					$value = $this->_auxTableData['list'][$y][$x];
+$out.="<h4>$id:{$value[1]}</h4>";
+/****************************************/
+					if(isset($this->_auxTableData['cells'][$id])) {
+						$cell = $this->_auxTableData['cells'][$id];
+						if(isset($cell['value'])) {
+							$out.= "\t\t\t<th rowspan=\"{$cell['rows']}\">{$cell['title']}</th>\n";
+							if($this->isEditable()) {
+								$out.= "\t\t\t<td colspan=\"".($colSpan-1)."\" id=\"item_".X2WParser::$_ParserId."_{$x}_{$y}\" onClick=\"X2WEditValue('{$this->_filename}','item_".X2WParser::$_ParserId."_{$x}_{$y}',".($this->debugEnabled()?'true':'false').");\">{$cell['value']}</td>\n";
+							} else {
+								$out.= "\t\t\t<td colspan=\"".($colSpan-1)."\">{$cell['value']}</td>\n";
+							}
+						} elseif(isset($cell['nochildren'])) {
+							$out.= "\t\t\t<td class=\"NoText\" colspan=\"2\" rowspan=\"{$cell['rows']}\">{$cell['title']}</td>\n";
+						} else {
+							$out.= "\t\t\t<th rowspan=\"{$cell['rows']}\">{$cell['title']}</th>\n";
+						}
+					}
+				}
+/****************************************/
+				$out.= "\t\t</tr>\n";
+			}
+$out.= '<pre>';
+ob_start();
+print_r($xmlSt);
+$out.=ob_get_contents();
+ob_end_clean();
+$out.= '</pre>';
+			
+			
+			
+			
+			$out.= "\t</table>\n";
+			$out.= "</div>\n";
+		} else {
+			$out = $this->getLastError();
+		}
+
+		return $out;
+	}
 	protected function showAsTable() {
 		$out = "";
 
@@ -488,12 +552,13 @@ class X2WParser {
 			$out.= "<div class=\"Xml2Wiki_table\">\n";
 			$out.= "\t<table class=\"{$this->_class}\">\n";
 
+			$this->loadXMLData();
 			$xml  = simplexml_load_string($this->_data);
-			$tree = $this->showAsTableChild($xml);
+			$tree = $this->showAsTableChild($this->_xmlData);
 			$aux  = $this->showAsTableTreeDig($tree);
 			$this->_auxTableData['maxrows'] = $tree['rows'];
 			$out.= "\t\t<tr>\n";
-			$out.= "\t\t\t<th colspan=\"{$this->_auxTableData['maxcols']}\">".$this->translate($xml->getName())."</th>\n";
+			$out.= "\t\t\t<th colspan=\"{$this->_auxTableData['maxcols']}\">".$this->translate($this->_xmlData->getName())."</th>\n";
 			$out.= "\t\t</tr>\n";
 			for($y=1; $y<=$this->_auxTableData['maxrows']; $y++) {
 				$out.= "\t\t<tr>\n";
@@ -517,7 +582,6 @@ class X2WParser {
 				}
 				$out.= "\t\t</tr>\n";
 			}
-			unset($xml);
 
 			$out.= "\t</table>\n";
 			$out.= "</div>\n";
