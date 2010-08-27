@@ -23,6 +23,7 @@ class X2WParser {
 	protected	$_data;
 	protected	$_class;
 	protected	$_filename;
+	protected	$_filepath;
 	protected	$_isEditable;
 	protected	$_localDebugEnabled;
 	protected	$_showAttrs;
@@ -58,7 +59,7 @@ class X2WParser {
 		$value    = $params[1];
 		$oldValue = $params[2];
 		$position = $params[3];
-		$debug    = ($params[4] == 'true' ? 'on' : 'off');
+		$debug    = $params[4];
 
 		$out = $value;
 
@@ -127,21 +128,22 @@ class X2WParser {
 			 * Getting and checking file-path to read.
 			 * @{
 			 */
-			$filepath = $this->getFilePath($this->_filename);
-			if(!$filepath) {
+			$this->_filepath = $this->getFilePath($this->_filename);
+			if(!$this->_filepath) {
 				$out  .= $this->getLastError();
 				$error = true;
 			} else {
-				$out.=$this->formatDebugMessage("Loading XML from '{$filepath}'");
+				$out.=$this->formatDebugMessage("Loading XML from '{$this->_filepath}'");
 			}
-
+			/* @} */
 			/*
 			 * Cheking if it is editable.
+			 * @{
 			 */
-			$this->_isEditable = $this->_x2wInstance->checkEditablePath($filepath);
+			$this->_isEditable = $this->_x2wInstance->checkEditablePath($this->_filepath);
 			$out.=$this->formatDebugMessage("XML is ".($this->isEditable()?'':'not ')."editable");
-
 			/* @} */
+
 			/*
 			 * Getting and checking translation-xml file-path to
 			 * read.
@@ -159,13 +161,13 @@ class X2WParser {
 			}
 			/* @} */
 			if(!$error) {
-				if(is_readable($filepath)) {
+				if(is_readable($this->_filepath)) {
 					/*
 					 * Loading file contents.
 					 */
-					$this->_data = file_get_contents($filepath);
+					$this->_data = file_get_contents($this->_filepath);
 				} else {
-					$out  .= $this->setLastError($this->formatErrorMessage(wfMsg('forbbidenfile',$filepath)));
+					$out  .= $this->setLastError($this->formatErrorMessage(wfMsg('forbbidenfile',$this->_filepath)));
 					$error = true;
 				}
 			}
@@ -285,6 +287,7 @@ class X2WParser {
 		$this->data          = '';
 		$this->_class        = '';
 		$this->_filename     = '';
+		$this->_filepath     = '';
 		$this->_showAttrs    = false;
 		$this->_translations = array(
 						'tags'  => array(),
@@ -553,7 +556,6 @@ $out.= '</pre>';
 			$out.= "\t<table class=\"{$this->_class}\">\n";
 
 			$this->loadXMLData();
-			$xml  = simplexml_load_string($this->_data);
 			$tree = $this->showAsTableChild($this->_xmlData);
 			$aux  = $this->showAsTableTreeDig($tree);
 			$this->_auxTableData['maxrows'] = $tree['rows'];
