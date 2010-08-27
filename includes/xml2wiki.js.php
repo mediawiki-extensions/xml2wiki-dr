@@ -65,12 +65,11 @@ function X2WEditedValue(url, id, debug) {
 	/*
 	 * Saving Data.
 	 */
-	 alert((debug?'true':'false'));
 	sajax_do_call('X2WParser::AjaxParser', [url+'<?php echo($wgXML2WikiConfig['ajaxseparator']); ?>'+
 						itemContent+'<?php echo($wgXML2WikiConfig['ajaxseparator']); ?>'+
 						itemOldContent+'<?php echo($wgXML2WikiConfig['ajaxseparator']); ?>'+
 						id+'<?php echo($wgXML2WikiConfig['ajaxseparator']); ?>'+
-						(debug?'true':'false')], item);
+						(debug?'on':'off')], item);
 	/*
 	 * Clearing item.
 	 */

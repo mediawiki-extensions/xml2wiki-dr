@@ -270,6 +270,11 @@ class Xml2Wiki extends SpecialPage {
 		global	$wgXML2WikiEditablePaths;
 		global	$wgXML2WikiConfig;
 		global	$wgParser;
+		global	$wgUseAjax;
+		global	$wgUser;
+		global	$wgGroupPermissions;
+		global	$wgDBtype;
+		global	$wgAllowExternalImages;
 
 		$tags   = $wgParser->getTags();
 		$mwords = $wgParser->getFunctionHooks();
@@ -278,6 +283,9 @@ class Xml2Wiki extends SpecialPage {
 		 * Section: Extension information.
 		 * @{
 		 */
+		if($wgAllowExternalImages) {
+			$out.= "\t\t<span style=\"float:right;text-align:center;\">http://wiki.daemonraco.com/wiki/dr.png<br/>[http://wiki.daemonraco.com/ DAEMonRaco]</span>\n";
+		}
 		$out.= "\t\t<h2>".wfMsg('sinfo-extension-information')."</h2>\n";
 		$out.= "\t\t<ul>\n";
 		$out.= "\t\t\t<li><strong>".wfMsg('sinfo-name').":</strong> ".Xml2Wiki::Property('name')."</li>\n";
@@ -308,15 +316,19 @@ class Xml2Wiki extends SpecialPage {
 		 */
 		$out.= "\t\t<h2>".wfMsg('sinfo-status')."</h2>\n";
 		$out.= "\t\t<table class=\"wikitable\">\n";
+		$out.= "\t\t\t<th colspan=\"2\">".wfMsg('sinfo-status')."</th>\n";
 		$out.= "\t\t\t<tr>\n";
-		$out.= "\t\t\t\t<th>".wfMsg('tag','xml2wiki')."</th>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\">".wfMsg('tag','xml2wiki')."</th>\n";
 		$out.= "\t\t\t\t<td>".(in_array('xml2wiki', $tags)?wfMsg('present'):wfMsg('not-present'))."</td>\n";
 		$out.= "\t\t\t</tr><tr>\n";
-		$out.= "\t\t\t\t<th>".wfMsg('magicword','#x2w')."</th>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\">".wfMsg('magicword','#x2w')."</th>\n";
 		$out.= "\t\t\t\t<td>".(in_array('x2w', $mwords)?wfMsg('present'):wfMsg('not-present'))."</td>\n";
 		$out.= "\t\t\t</tr><tr>\n";
-		$out.= "\t\t\t\t<th>".get_class($wgParser)."::SFH_OBJECT_ARGS</th>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\">".get_class($wgParser)."::SFH_OBJECT_ARGS</th>\n";
 		$out.= "\t\t\t\t<td>".(defined(get_class($wgParser).'::SFH_OBJECT_ARGS')?wfMsg('present'):wfMsg('not-present'))."</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\">".wfMsg('sinfo-useajax')."</th>\n";
+		$out.= "\t\t\t\t<td>".($wgUseAjax?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
 		$out.= "\t\t\t</tr>\n";
 		$out.= "\t\t</table>\n";
 		/* @} */
@@ -326,7 +338,9 @@ class Xml2Wiki extends SpecialPage {
 		 */
 		$out.= "\t\t<h2>".wfMsg('sinfo-allowed-paths')."</h2>\n";
 		if($wgXML2WikiConfig['showallowpaths']) {
+			$out.= "\t\t<p>".wfMsg('sinfo-allowed-paths-info').".</p>\n";
 			$out.= "\t\t<table class=\"wikitable\">\n";
+			$out.= "\t\t\t<th colspan=\"2\">".wfMsg('sinfo-allowed-paths')."</th>\n";
 			$list = $this->_allowedPaths->directories();
 			$len  = count($list);
 			if($len) {
@@ -381,13 +395,78 @@ class Xml2Wiki extends SpecialPage {
 		}
 		/* @} */
 		/*
+		 * Section: Editable Paths
+		 * @{
+		 */
+		$out.= "\t\t<h2>".wfMsg('sinfo-editable-paths')."</h2>\n";
+		if($wgXML2WikiConfig['showeditablepaths']) {
+			$out.= "\t\t<table class=\"wikitable\">\n";
+			$out.= "\t\t\t<th colspan=\"2\">".wfMsg('sinfo-editable-paths')."</th>\n";
+			$list = $this->_editablePaths->directories();
+			$len  = count($list);
+			if($len) {
+				$out.= "\t\t\t<tr><th rowspan=\"{$len}\" style=\"vertical-align:top;text-align:left;\">".wfMsg('directories')."</th>\n";
+				for($i=0, $j=1; $i<$len; $i++, $j++) {
+					$out.= "\t\t\t\t<td>{$list[$i]}</td>\n";
+					if($j < $len) {
+						$out.= "\t\t\t</tr><tr>\n";
+					}
+				}
+				$out.= "\t\t\t</tr>\n";
+			}
+			$list = $this->_editablePaths->files();
+			$len  = count($list);
+			if($len) {
+				$out.= "\t\t\t<tr><th rowspan=\"{$len}\" style=\"vertical-align:top;text-align:left;\">".wfMsg('files')."</th>\n";
+				for($i=0, $j=1; $i<$len; $i++, $j++) {
+					$out.= "\t\t\t\t<td>{$list[$i]}</td>\n";
+					if($j < $len) {
+						$out.= "\t\t\t</tr><tr>\n";
+					}
+				}
+				$out.= "\t\t\t</tr>\n";
+			}
+			$list = $this->_editablePaths->noAccess();
+			$len  = count($list);
+			if($len) {
+				$out.= "\t\t\t<tr><th rowspan=\"{$len}\" style=\"vertical-align:top;text-align:left;\">".wfMsg('noaccess')."</th>\n";
+				for($i=0, $j=1; $i<$len; $i++, $j++) {
+					$out.= "\t\t\t\t<td style=\"text-decoration:line-through;\">{$list[$i]}</td>\n";
+					if($j < $len) {
+						$out.= "\t\t\t</tr><tr>\n";
+					}
+				}
+				$out.= "\t\t\t</tr>\n";
+			}
+			$list = $this->_editablePaths->unknown();
+			$len  = count($list);
+			if($len) {
+				$out.= "\t\t\t<tr><th rowspan=\"{$len}\" style=\"vertical-align:top;text-align:left;\">".wfMsg('unknown')."</th>\n";
+				for($i=0, $j=1; $i<$len; $i++, $j++) {
+					$out.= "\t\t\t\t<td style=\"color:#a60000\">{$list[$i]}</td>\n";
+					if($j < $len) {
+						$out.= "\t\t\t</tr><tr>\n";
+					}
+				}
+				$out.= "\t\t\t</tr>\n";
+			}
+			$out.= "\t\t</table>\n";
+		} else {
+			$out.= "\t\t<p>".wfMsg('sinfo-information-disabled').".</p>\n";
+		}
+		/* @} */
+		/*
 		 * Section: System Information
 		 * @{
 		 */
 		if($wgXML2WikiConfig['showsysinfo']) {
+			$dbr = wfGetDB( DB_SLAVE );
+
 			$out.= "\t\t<h2>".wfMsg('sinfo-system-information')."</h2>\n";
 			$out.= "\t\t<ul>\n";
 			$out.= "\t\t\t<li><strong>".wfMsg('sinfo-php-version').":</strong> ".phpversion()."</li>\n";
+			$out.= "\t\t\t<li><strong>".wfMsg('sinfo-db-type').":</strong> ".$wgDBtype." (".$dbr->getSoftwareLink()." ".$dbr->getServerVersion().")</li>\n";
+			$out.= "\t\t\t<li><strong>[http://www.mediawiki.org/ MediaWiki]:</strong> ".SpecialVersion::getVersionLinked()."</li>\n";
 			$out.= "\t\t</ul>\n";
 		}
 		/* @} */
@@ -428,40 +507,64 @@ class Xml2Wiki extends SpecialPage {
 		$out.= "\t\t\t<tr>\n";
 		$out.= "\t\t\t\t<th colspan=\"3\">".wfMsg('sinfo-attributes')."</th>\n";
 		$out.= "\t\t\t</tr><tr>\n";
-		$out.= "\t\t\t\t<th rowspan=\"2\">".wfMsg('sinfo-prefix')."</th>\n";
-		$out.= "\t\t\t\t<th>".wfMsg('sinfo-normal')."</th>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\" rowspan=\"2\">".wfMsg('sinfo-prefix')."</th>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\">".wfMsg('sinfo-normal')."</th>\n";
 		$out.= "\t\t\t\t<td>\"{$wgXML2WikiConfig['attributesprefix']}\"</td>\n";
 		$out.= "\t\t\t</tr><tr>\n";
-		$out.= "\t\t\t\t<th>".wfMsg('sinfo-translated')."</th>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\">".wfMsg('sinfo-translated')."</th>\n";
 		$out.= "\t\t\t\t<td>\"{$wgXML2WikiConfig['transattributesprefix']}\"</td>\n";
 		$out.= "\t\t\t</tr><tr>\n";
-		$out.= "\t\t\t\t<th rowspan=\"2\">".wfMsg('sinfo-suffix')."</th>\n";
-		$out.= "\t\t\t\t<th>".wfMsg('sinfo-normal')."</th>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\" rowspan=\"2\">".wfMsg('sinfo-suffix')."</th>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\">".wfMsg('sinfo-normal')."</th>\n";
 		$out.= "\t\t\t\t<td>\"{$wgXML2WikiConfig['attributessuffix']}\"</td>\n";
 		$out.= "\t\t\t</tr><tr>\n";
-		$out.= "\t\t\t\t<th>".wfMsg('sinfo-translated')."</th>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\">".wfMsg('sinfo-translated')."</th>\n";
 		$out.= "\t\t\t\t<td>\"{$wgXML2WikiConfig['transattributessuffix']}\"</td>\n";
 		$out.= "\t\t\t</tr>\n";
 		$out.= "\t\t\t<tr>\n";
 		$out.= "\t\t\t\t<th colspan=\"3\">".wfMsg('sinfo-permissions')."</th>\n";
 		$out.= "\t\t\t</tr><tr>\n";
-		$out.= "\t\t\t\t<th colspan=\"2\">".wfMsg('sinfo-showallowpaths')."</th>\n";
-		$out.= "\t\t\t\t<td>\"".($wgXML2WikiConfig['showallowpaths']?wfMsg('enabled'):wfMsg('disabled'))."\"</td>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\" colspan=\"2\">".wfMsg('sinfo-showallowpaths')."</th>\n";
+		$out.= "\t\t\t\t<td>".($wgXML2WikiConfig['showallowpaths']?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
 		$out.= "\t\t\t</tr><tr>\n";
-		$out.= "\t\t\t\t<th colspan=\"2\">".wfMsg('sinfo-showinstalldir')."</th>\n";
-		$out.= "\t\t\t\t<td>\"".($wgXML2WikiConfig['showinstalldir']?wfMsg('enabled'):wfMsg('disabled'))."\"</td>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\" colspan=\"2\">".wfMsg('sinfo-showinstalldir')."</th>\n";
+		$out.= "\t\t\t\t<td>".($wgXML2WikiConfig['showinstalldir']?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
 		$out.= "\t\t\t</tr><tr>\n";
-		$out.= "\t\t\t\t<th colspan=\"2\">".wfMsg('sinfo-showsysinfo')."</th>\n";
-		$out.= "\t\t\t\t<td>\"".($wgXML2WikiConfig['showsysinfo']?wfMsg('enabled'):wfMsg('disabled'))."\"</td>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\" colspan=\"2\">".wfMsg('sinfo-showsysinfo')."</th>\n";
+		$out.= "\t\t\t\t<td>".($wgXML2WikiConfig['showsysinfo']?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
 		$out.= "\t\t\t</tr><tr>\n";
-		$out.= "\t\t\t\t<th colspan=\"2\">".wfMsg('sinfo-showmodules')."</th>\n";
-		$out.= "\t\t\t\t<td>\"".($wgXML2WikiConfig['showmodules']?wfMsg('enabled'):wfMsg('disabled'))."\"</td>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\" colspan=\"2\">".wfMsg('sinfo-showmodules')."</th>\n";
+		$out.= "\t\t\t\t<td>".($wgXML2WikiConfig['showmodules']?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
 		$out.= "\t\t\t</tr><tr>\n";
-		$out.= "\t\t\t\t<th colspan=\"2\">".wfMsg('sinfo-allowedpathsrecursive')."</th>\n";
-		$out.= "\t\t\t\t<td>\"".($wgXML2WikiConfig['allowedpathsrecursive']?wfMsg('enabled'):wfMsg('disabled'))."\"</td>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\" colspan=\"2\">".wfMsg('sinfo-allowedpathsrecursive')."</th>\n";
+		$out.= "\t\t\t\t<td>".($wgXML2WikiConfig['allowedpathsrecursive']?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
 		$out.= "\t\t\t</tr><tr>\n";
-		$out.= "\t\t\t\t<th colspan=\"2\">".wfMsg('sinfo-allownocache')."</th>\n";
-		$out.= "\t\t\t\t<td>\"".($wgXML2WikiConfig['allownocache']?wfMsg('enabled'):wfMsg('disabled'))."\"</td>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\" colspan=\"2\">".wfMsg('sinfo-editablepathsrecursive')."</th>\n";
+		$out.= "\t\t\t\t<td>".($wgXML2WikiConfig['editablepathsrecursive']?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\" colspan=\"2\">".wfMsg('sinfo-allownocache')."</th>\n";
+		$out.= "\t\t\t\t<td>".($wgXML2WikiConfig['allownocache']?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
+		$out.= "\t\t\t<tr>\n";
+		$out.= "\t\t\t\t<th colspan=\"3\">".wfMsg('sinfo-user-permissions')."</th>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\" rowspan=\"6\">x2w-tableedit</th>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\">*</th>\n";
+		$out.= "\t\t\t\t<td>".($wgGroupPermissions['*']['x2w-tableedit']?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\">user</th>\n";
+		$out.= "\t\t\t\t<td>".($wgGroupPermissions['user']['x2w-tableedit']?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\">bot</th>\n";
+		$out.= "\t\t\t\t<td>".($wgGroupPermissions['bot']['x2w-tableedit']?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\">sysop</th>\n";
+		$out.= "\t\t\t\t<td>".($wgGroupPermissions['sysop']['x2w-tableedit']?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\">bureaucrat</th>\n";
+		$out.= "\t\t\t\t<td>".($wgGroupPermissions['bureaucrat']['x2w-tableedit']?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\">".wfMsg('sinfo-your-permissions')."</th>\n";
+		$out.= "\t\t\t\t<td>".(in_array('x2w-tableedit',$wgUser->getRights())?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
 		$out.= "\t\t\t</tr>\n";
 		$out.= "\t\t</table>\n";
 		/* @} */
@@ -473,6 +576,7 @@ class Xml2Wiki extends SpecialPage {
 		$out.= "\t\t<ul>\n";
 		$out.= "\t\t\t<li><strong>MediaWiki Extensions:</strong> http://www.mediawiki.org/wiki/Extension:XML2Wiki</li>\n";
 		$out.= "\t\t\t<li><strong>GoogleCode Proyect Site:</strong> https://code.google.com/p/xml2wiki-dr/</li>\n";
+		$out.= "\t\t\t<li><strong>GoogleCode Issues Trak:</strong> https://code.google.com/p/xml2wiki-dr/issues</li>\n";
 		$out.= "\t\t</ul>\n";
 		/* @} */
 

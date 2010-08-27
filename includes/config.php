@@ -38,10 +38,11 @@ $wgXML2WikiEditablePaths[] = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR.'xml
  * Information
  *	@{
  */
-$wgXML2WikiConfig['showallowpaths'] = true;
-$wgXML2WikiConfig['showinstalldir'] = true;
-$wgXML2WikiConfig['showsysinfo']    = true;
-$wgXML2WikiConfig['showmodules']    = true;
+$wgXML2WikiConfig['showallowpaths']    = true;
+$wgXML2WikiConfig['showeditablepaths'] = true;
+$wgXML2WikiConfig['showinstalldir']    = true;
+$wgXML2WikiConfig['showsysinfo']       = true;
+$wgXML2WikiConfig['showmodules']       = true;
 /**	@} */
 
 /**
