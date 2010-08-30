@@ -173,6 +173,9 @@ class Xml2Wiki extends SpecialPage {
 
 		return $out;
 	}
+	/**
+	 * @todo doc
+	 */
 	public function debugEnabled() {
 		return $this->_debugEnabled;
 	}
@@ -195,6 +198,11 @@ class Xml2Wiki extends SpecialPage {
 		$output = $this->getInfo();
 		$wgOut->addWikiText($output);
 	}
+	/**
+	 * @todo doc
+	 * @param unknown_type $message @todo doc
+	 * @param unknown_type $force @todo doc
+	 */
 	public function formatDebugMessage($message, $force=false) {
 		if($this->debugEnabled() || $force) {
 			return "<span style=\"color:purple;\">".$this->DEBUG_PREFIX."$message</span><br/>\n";
@@ -202,6 +210,10 @@ class Xml2Wiki extends SpecialPage {
 			return '';
 		}
 	}
+	/**
+	 * @todo doc
+	 * @param unknown_type $message @todo doc
+	 */
 	public function formatErrorMessage($message) {
 		return "<span style=\"color:red;font-weight:bold;\">".$this->ERROR_PREFIX."$message</span>";
 	}
@@ -575,8 +587,8 @@ class Xml2Wiki extends SpecialPage {
 		$out.= "\t\t<h2>".wfMsg('sinfo-links')."</h2>\n";
 		$out.= "\t\t<ul>\n";
 		$out.= "\t\t\t<li><strong>MediaWiki Extensions:</strong> http://www.mediawiki.org/wiki/Extension:XML2Wiki</li>\n";
-		$out.= "\t\t\t<li><strong>GoogleCode Proyect Site:</strong> https://code.google.com/p/xml2wiki-dr/</li>\n";
-		$out.= "\t\t\t<li><strong>GoogleCode Issues Trak:</strong> https://code.google.com/p/xml2wiki-dr/issues</li>\n";
+		$out.= "\t\t\t<li><strong>GoogleCode Proyect Site:</strong> http://code.google.com/p/xml2wiki-dr/</li>\n";
+		$out.= "\t\t\t<li><strong>GoogleCode Issues Trak:</strong> http://code.google.com/p/xml2wiki-dr/issues</li>\n";
 		$out.= "\t\t</ul>\n";
 		/* @} */
 
@@ -655,6 +667,10 @@ class Xml2Wiki extends SpecialPage {
 		$this->_lastError = $msg;
 		return $this->getLastError();
 	}
+	/**
+	 * @todo doc
+	 * @param unknown_type $name @todo doc
+	 */
 	public function varDefault($name) {
 		return (isset($this->_varDefaults[$name])?$this->_varDefaults[$name]:'');
 	}
@@ -751,7 +767,6 @@ class Xml2Wiki extends SpecialPage {
 		}
 		return Xml2Wiki::$_Instance;
 	}
-
 	public static function Property($name) {
 		$name = strtolower($name);
 		if(!isset(Xml2Wiki::$_Properties[$name])) {
