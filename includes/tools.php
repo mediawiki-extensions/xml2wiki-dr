@@ -39,70 +39,81 @@ function buildXMLStruct(&$xml, $find=null, $replace=null, $noelement=true, $list
 }
 function buildStructDig(&$xml, &$auxSt) {
 	if(!isset($auxSt['found'])) {
+		/*
+		 * Creating item structure.
+		 */
 		$st = array(
 			'tag'		=> $xml->getName(),
 			'x'		=> $auxSt['x'],
 			'y'		=> $auxSt['y'],
 			'children'	=> array(),
 		);
+		/*
+		 * Attaching xml-element.
+		 */
+		if(!isset($auxSt['noelement'])) {
+			$st['element'] = &$xml;
+		}
+		/*
+		 * Build items list (auxilliar structure).
+		 */
 		if($auxSt['list'] !== false) {
 			if(!isset($auxSt['list'][$st['y']])) {
 				$auxSt['list'][$st['y']] = array();
 			}
 			$auxSt['list'][$st['y']][$st['x']] = array(
-				'tag',
-				$st['tag'],
+				'tag' => $st['tag'],
 			);
-			
-		}
-		if(!isset($auxSt['noelement'])) {
-			$st['element'] = &$xml;
-		}
 
+		}
+		/*
+		 * Check if it is the item that is been looking for.
+		 */
 		if($auxSt['find'] != null) {
 			if($st['x'] == $auxSt['find']['x'] && $st['y'] == $auxSt['find']['y']) {
 				$auxSt['found'] = true;
 			}
 		}
 
-		if($auxSt['x'] > $auxSt['columns']) {
-			$auxSt['columns'] = $auxSt['x'];
-		}
+		$auxSt['x']++;
 
-		//$childrenLenght = $xml->count();
-		$childrenLenght = count($xml->xpath('./*'));
-		if($childrenLenght) {
-			$auxSt['x']++;
-			$auxY = $auxSt['y'];
-			foreach($xml->children() as $c) {
-				$st['children'][] = buildStructDig($c, $auxSt);
+		/*
+		 * Follow every child.
+		 */
+		$first = true;
+		foreach($xml->children() as $c) {
+			if($first) {
+				$first = false;
+			} else {
 				$auxSt['y']++;
 			}
-			$auxSt['x']--;
-			$auxSt['y'] = $auxY + $childrenLenght - 1;
-			if($auxSt['y'] > $auxSt['rows']) {
-				$auxSt['rows'] = $auxSt['y'];
-			}
-		} else {
-			$text = ''.$xml;
+			$st['children'][] = buildStructDig($c, $auxSt);
+		}
+
+		if(!count($st['children'])) {
+			$text = trim(''.$xml);
 			if($text) {
-				$st['children'][0] = array(
-					'text'		=> $text,
-					'x'		=> $auxSt['x']+1,
-					'y'		=> $st['y'],
+				/*
+				 * Create text child.
+				 */
+				$st['children'][] = array(
+					'x'	=> $auxSt['x'],
+					'y'	=> $st['y'],
+					'text'	=> $text,
 				);
+				/*
+				 * Build items list (auxilliar structure).
+				 */
 				if($auxSt['list'] !== false) {
 					if(!isset($auxSt['list'][$st['children'][0]['y']])) {
 						$auxSt['list'][$st['children'][0]['y']] = array();
 					}
 					$auxSt['list'][$st['children'][0]['y']][$st['children'][0]['x']] = array(
-						'text',
-						$st['children'][0]['text'],
+						'text' => $st['children'][0]['text'],
 					);
 				}
-
 				/*
-				 * Find check.
+				 * Check if it is the item that is been looking for.
 				 */
 				if($auxSt['find'] != null) {
 					if($st['children'][0]['x'] == $auxSt['find']['x']
@@ -126,15 +137,82 @@ function buildStructDig(&$xml, &$auxSt) {
 						}
 					}
 				}
-				if($auxSt['x']+1 > $auxSt['columns']) {
-					$auxSt['columns'] = $auxSt['x'] + 1;
+				/*
+				 * Recalculate columns.
+				 */
+				if($auxSt['columns'] < ($auxSt['x'])) {
+					$auxSt['columns'] = $auxSt['x'];
 				}
 			}
+		} else {
+			/*
+			 * Recalculate columns.
+			 */
+			if($auxSt['columns'] < ($auxSt['x'] - 1)) {
+				$auxSt['columns'] = $auxSt['x'] - 1;
+			}
+		}
+
+		$auxSt['x']--;
+
+		/*
+		 * Recalculate rows.
+		 */
+		if($auxSt['rows'] < ($auxSt['y'])) {
+			$auxSt['rows'] = $auxSt['y'];
 		}
 
 		return $st;
 	} else {
 		return null;
+	}
+}
+function buildXMLStructSpan(&$st) {
+	$cols = $st['stat']['columns'];
+	$rows = $st['stat']['rows'];
+	$list = &$st['stat']['list'];
+	/*
+	 * Removing master-tag's information.
+	 */
+	for($x=0; $x<=$cols; $x++) {
+		if(isset($list[$x][0])) {
+			unset($list[$x][0]);
+		}
+	}
+	/*
+	 * Checking every item.
+	 */
+	for($y=$rows; $y>0; $y--) {
+		for($x=1; $x<=$cols; $x++) {
+			if(isset($list[$y][$x]) && !isset($list[$y][$x]['dummy'])) {
+				/*
+				 * Calculating colspan.
+				 */
+				$list[$y][$x]['colspan'] = 1;
+				if(!isset($list[$y][$x+1])) {
+					/*
+					 * Filling with dummy item to the right.
+					 * Needed to calculate rowspans.
+					 */
+					for($_x=$x+1; $_x<=$cols; $_x++) {
+						$list[$y][$_x]['dummy'] = true;
+						$list[$y][$x]['colspan']++;
+					}
+				}
+
+				/*
+				 * Calculating rowspan.
+				 */
+				$list[$y][$x]['rowspan'] = 1;
+				for($_y=$y+1; $_y<=$rows; $_y++) {
+					if(isset($list[$_y][$x])) {
+						break;
+					} else {
+						$list[$y][$x]['rowspan']++;
+					}
+				}
+			}
+		}
 	}
 }
 

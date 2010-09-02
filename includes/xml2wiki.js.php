@@ -13,7 +13,10 @@
 <?php
 require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'config.php');
 ?>
+var	X2WEDITING_ID = false;
+
 function X2WEditValue(url, id, debug) {
+	X2WEDITING_ID = id;
 	/*
 	 * Getting item to process.
 	 */
@@ -26,6 +29,7 @@ function X2WEditValue(url, id, debug) {
 	 * Getting current data.
 	 */
 	var	itemContent = item.innerHTML;
+	var	itemWidth   = item.clientWidth;
 	/*
 	 * Clearing item.
 	 */
@@ -46,10 +50,12 @@ function X2WEditValue(url, id, debug) {
 	input.setAttribute('id',    id+'_input');
 	input.setAttribute('type',  'text');
 	input.setAttribute('value', itemContent);
+	input.setAttribute('style', 'width:'+itemWidth+'px;');
 	item.appendChild(input);
 	input.onblur = function() {
 		X2WEditedValue(url, id, debug);
 	}
+	input.onkeydown = X2WKeyDown;
 	input.focus();
 }
 function X2WEditedValue(url, id, debug) {
@@ -90,5 +96,37 @@ function X2WEditedValue(url, id, debug) {
 		X2WEditValue(url, id, debug);
 	}
 	
-	X2WEditingXML = null;
+	X2WEDITING_ID = false;
+}
+function X2WKeyDown(event) {
+	/*
+	 * MSIE hack
+	 */
+	if(window.event) {
+		event = window.event;
+	}
+	/*
+	 * Getting items to process.
+	 */
+	var	item         = document.getElementById(X2WEDITING_ID);
+	var	contentInput = document.getElementById(X2WEDITING_ID+'_input');
+	/*
+	 * Getting data to be saved.
+	 */
+	var	itemContent    = contentInput.value;
+	var	itemOldContent = document.getElementById(X2WEDITING_ID+'_hinput').value;
+	
+	/*
+	 * Checking key event.
+	 */
+	var KeyID = event.keyCode;
+	if(KeyID == 13) {
+		contentInput.blur();
+	} else if(KeyID == 27) {
+		contentInput.value = itemOldContent;
+		contentInput.blur();
+		item.innerHTML = itemOldContent;
+	}
+
+	return true;
 }

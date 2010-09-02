@@ -77,6 +77,7 @@ class Xml2Wiki extends SpecialPage {
 				'showattrs'	=> 'off',	//!
 				'style'		=> 'pre',	//! parsing style.
 				'translator'	=> '',		//! tag translator XML.
+				'editable'	=> 'off'	//! editable XMLs on table view.
 	);
 	/**
 	 * Allowed paths holder and checker.
@@ -718,6 +719,7 @@ class Xml2Wiki extends SpecialPage {
 			 *	- showattrs
 			 *	- class
 			 *	- debug
+			 *	- editable
 			 */
 			$this->setLastError();
 			$aux = new X2WParser();

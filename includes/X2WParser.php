@@ -16,23 +16,61 @@
  * @class X2WParser
  */
 class X2WParser {
+	/**
+	 * @var integer
+	 */
 	protected static	$_ParserId = 0;
 
+	/**
+	 * @var Xml2Wiki
+	 */
 	protected	$_x2wInstance;
-
+	/**
+	 * @var string
+	 */
 	protected	$_data;
+	/**
+	 * @var boolean
+	 */
+	protected	$_editableFlaged;
 	protected	$_class;
+	/**
+	 * @var string
+	 */
 	protected	$_filename;
+	/**
+	 * @var string
+	 */
 	protected	$_filepath;
+	/**
+	 * @var boolean
+	 */
 	protected	$_isEditable;
+	/**
+	 * @var boolean
+	 */
+	protected	$_isEditableChecked;
+	/**
+	 * @var boolean
+	 */
 	protected	$_localDebugEnabled;
+	/**
+	 * @var boolean
+	 */
 	protected	$_showAttrs;
+	/**
+	 * @var string
+	 */
 	protected	$_style;
+	/**
+	 * @var ArrayObject
+	 */
 	protected	$_translations;
 	protected	$_translator;
+	/**
+	 * @var SimpleXMLElement
+	 */
 	protected	$_xmlData;
-
-	protected	$_auxTableData;
 
 	/**
 	 * Class constructor.
@@ -48,66 +86,39 @@ class X2WParser {
 		$this->clear();
 	}
 
-	public static function AjaxParser($params) {
-		$out = '';
-
-		global	$wgXML2WikiConfig;
-		Xml2Wiki::Instance();
-
-		$params   = explode($wgXML2WikiConfig['ajaxseparator'], $params);
-		$xml      = $params[0];
-		$value    = $params[1];
-		$oldValue = $params[2];
-		$position = $params[3];
-		$debug    = $params[4];
-
-		$out = $value;
-
-		/*
-		 *	- class
-		 *	- file
-		 *	- translator
-		 *	- style
-		 *	- showattrs
-		 *	- class
-		 *	- debug
-		 */
-		$conf = array(	'file'  => $xml,
-				'debug' => $debug,
-		);
-		$x2wParser = new X2WParser();
-		$x2wParser->setLastError();
-		$x2wParser->loadFromList($conf);
-		if($x2wParser->getLastError()) {
-			if($x2wParser->debugEnabled()) {
-				$out = $x2wParser->getLastError().'<br/>'.$oldValue;
-			} else {
-				$out = $oldValue;
-			}
-		}
-
-		return $out;
-	}
-
+	/*
+	 * Public methods.
+	 */
+	/**
+	 * @todo doc
+	 */
 	public function debugEnabled() {
 		return ($this->_x2wInstance->debugEnabled() || $this->_localDebugEnabled);
 	}
+	/**
+	 * @todo doc
+	 */
 	public function isEditable() {
-		static	$permissions = false;
-		static	$firstCheck  = true;
-
-		if($firstCheck) {
-			$firstCheck = false;
-
-			global	$wgUseAjax;
-			if($wgUseAjax) {
-				global	$wgUser;
-				$permissions = in_array('x2w-tableedit', $wgUser->getRights());
+		if(!$this->_isEditableChecked) {
+			$this->_isEditable        = false;
+			$this->_isEditableChecked = true;
+			if($this->_editableFlaged) {
+				global	$wgUseAjax;
+				global	$wgRequest;
+ 
+				$action = $wgRequest->getVal('action', 'view');
+				if(!in_array($action,array('edit','ajax','submit')) && $wgUseAjax) {
+					global	$wgUser;
+					$this->_isEditable = in_array('x2w-tableedit', $wgUser->getRights());
+				}
 			}
 		}
 
-		return ($permissions && $this->_isEditable);
+		return $this->_isEditable;
 	}
+	/**
+	 * @todo doc
+	 */
 	public function load() {
 		/*
 		 * This variable will hold the content to be retorned. Eighter
@@ -122,6 +133,7 @@ class X2WParser {
 		$out.=$this->formatDebugMessage("showAttrs = '{$this->_showAttrs}'");
 		$out.=$this->formatDebugMessage("style = '{$this->_style}'");
 		$out.=$this->formatDebugMessage("translator ='{$this->_translator}'");
+		$out.=$this->formatDebugMessage("editable ='{$this->_editableFlaged}'");
 
 		if($this->_filename) {
 			/*
@@ -178,6 +190,10 @@ class X2WParser {
 
 		return $out;
 	}
+	/**
+	 *  @todo doc
+	 *  @param array $conf @todo doc
+	 */
 	public function loadFromList($conf) {
 		/*
 		 * Clearing status.
@@ -194,14 +210,22 @@ class X2WParser {
 			$this->_style             = (isset($conf['style'])?$conf['style']:$this->_x2wInstance->varDefault('style'));
 			$this->_showAttrs         = (isset($conf['showattrs'])?$conf['showattrs']:$this->_x2wInstance->varDefault('showattrs'));
 			$this->_localDebugEnabled = (isset($conf['debug'])?$conf['debug']:$this->_x2wInstance->varDefault('debug'));
+			$this->_editableFlaged    = (isset($conf['editable'])?$conf['editable']:$this->_x2wInstance->varDefault('editable'));
 
-			$this->_showAttrs         = (strtolower($this->_showAttrs) == 'on');
+			$this->_showAttrs         = (strtolower($this->_showAttrs)         == 'on');
 			$this->_localDebugEnabled = (strtolower($this->_localDebugEnabled) == 'on');
+			$this->_editableFlaged    = (strtolower($this->_editableFlaged)    == 'on');
 			return $this->load();
 		} else {
 			return '';
 		}
 	}
+	/**
+	 * @todo doc
+	 * @param string $input @todo doc
+	 * @param array $params @todo doc
+	 * @param Parser $parser @todo doc
+	 */
 	public function loadFromTags($input, $params, $parser) {
 		/*
 		 * Clearing status.
@@ -215,6 +239,10 @@ class X2WParser {
 
 		return $this->load();
 	}
+	/**
+	 * @todo doc
+	 * @param string $cmd @todo doc
+	 */
 	public function runCommand($cmd) {
 		$out = '';
 
@@ -223,6 +251,9 @@ class X2WParser {
 
 		return $out;
 	}
+	/**
+	 * @todo doc
+	 */
 	public function show() {
 		/*
 		 * This variable will hold the content to be retorned. Eighter
@@ -261,6 +292,9 @@ class X2WParser {
 	/*
 	 * Protected Methods.
 	 */
+	/**
+	 * @todo doc
+	 */
 	protected function checkSimpleXML() {
 		return $this->_x2wInstance->checkSimpleXML();
 	}
@@ -270,20 +304,12 @@ class X2WParser {
 	protected function clear() {
 		$this->_xmlData = false;
 
-		if(isset($this->_auxTableData)) {
-			unset($this->_auxTableData);
-		}
 		if(isset($this->_translations)) {
 			unset($this->_translations['tags']);
 			unset($this->_translations['attrs']);
 			unset($this->_translations);
 		}
 
-		$this->_auxTableData = array(
-						'maxcols' => 1,
-						'maxrows' => 1,
-						'cells'   => array()
-		);
 		$this->data          = '';
 		$this->_class        = '';
 		$this->_filename     = '';
@@ -295,17 +321,33 @@ class X2WParser {
 		);
 		$this->_translator   = '';
 
-		$this->_isEditable = false;
+		$this->_isEditable        = false;
+		$this->_isEditableChecked = false;
 	}
+	/**
+	 * @todo doc
+	 * @param string $msg @todo doc
+	 */
 	protected function formatDebugMessage($msg) {
 		return $this->_x2wInstance->formatDebugMessage($msg, $this->_localDebugEnabled);
 	}
+	/**
+	 * @todo doc
+	 * @param string $msg @todo doc
+	 */
 	protected function formatErrorMessage($msg) {
 		return $this->_x2wInstance->formatErrorMessage($msg);
 	}
+	/**
+	 * @todo doc
+	 * @param string $filename @todo doc
+	 */
 	protected function getFilePath($filename) {
 		return $this->_x2wInstance->getFilePath($filename);
 	}
+	/**
+	 * @todo doc
+	 */
 	protected function getLastError() {
 		return $this->_x2wInstance->getLastError();
 	}
@@ -331,6 +373,10 @@ class X2WParser {
 
 		return $out;
 	}
+	/**
+	 * @todo doc
+	 * @param string $filepath @todo doc
+	 */
 	protected function loadTranslations($filepath) {
 		$out = "";
 
@@ -367,32 +413,44 @@ class X2WParser {
 
 		return $out;
 	}
-
 	/**
 	 * This method tries to load all the useful information set between tags
 	 * <xml2wiki> and </xml2wiki>.
 	 * @param $input Configuration text to be analyzed.
 	 */
 	protected function loadVariables($input) {
-		$this->_class      = $this->getVariable($input, 'class');
-		$this->_filename   = $this->getVariable($input, 'file');
-		$this->_translator = $this->getVariable($input, 'translator');
-		$this->_style      = $this->getVariable($input, 'style');
+		$this->_class      = trim($this->getVariable($input, 'class'));
+		$this->_filename   = trim($this->getVariable($input, 'file'));
+		$this->_translator = trim($this->getVariable($input, 'translator'));
+		$this->_style      = trim($this->getVariable($input, 'style'));
 
-		$aux = strtolower($this->getVariable($input, 'showattrs'));
+		$aux = strtolower(trim($this->getVariable($input, 'showattrs')));
 		$this->_showAttrs = ($aux == 'on');
 
-		$aux = strtolower($this->getVariable($input, 'debug'));
+		$aux = strtolower(trim($this->getVariable($input, 'debug')));
 		$this->_localDebugEnabled = ($aux == 'on');
+
+		$aux = strtolower(trim($this->getVariable($input, 'editable')));
+		$this->_editableFlaged = ($aux == 'on');
 	}
+	/**
+	 * @todo doc
+	 */
 	protected function loadXMLData() {
 		if($this->_xmlData === false) {
 			$this->_xmlData = simplexml_load_string($this->_data);
 		}
 	}
+	/**
+	 * @todo doc
+	 * @param string $msg @todo doc
+	 */
 	protected function setLastError($msg="") {
 		return $this->_x2wInstance->setLastError($msg);
 	}
+	/**
+	 * @todo doc
+	 */
 	protected function showAsCode() {
 		$out = '';
 
@@ -416,9 +474,15 @@ class X2WParser {
 
 		return $out;
 	}
+	/**
+	 * @todo doc
+	 */
 	protected function showAsDirect() {
 		return "<div class=\"Xml2Wiki_direct\">".htmlspecialchars($this->_data)."</div>";
 	}
+	/**
+	 * @todo doc
+	 */
 	protected function showAsList() {
 		$out = "";
 
@@ -443,6 +507,12 @@ class X2WParser {
 
 		return $out;
 	}
+	/**
+	 * @todo doc
+	 * @param unknown_type $child @todo doc
+	 * @param integer $level @todo doc
+	 * @param string $space @todo doc
+	 */
 	protected function showAsListChild(&$child, $level=1, $space="\t\t") {
 		$out = "";
 
@@ -480,71 +550,15 @@ class X2WParser {
 
 		return $out;
 	}
+	/**
+	 * @todo doc
+	 */
 	protected function showAsPre() {
 		return "<div class=\"Xml2Wiki_pre\"><pre>".htmlspecialchars($this->_data)."</pre></div>";
 	}
-	protected function showAsTable2() {
-		$out = "";
-
-		global	$wgUseAjax;
-
-		$this->setLastError();
-		if($this->checkSimpleXML()) {
-			$out.= "<div class=\"Xml2Wiki_table\">\n";
-			$out.= "\t<table class=\"{$this->_class}\">\n";
-
-			$this->loadXMLData();
-			$xmlSt = buildXMLStruct($this->_xmlData, null, null, true, true);
-			$this->_auxTableData['maxcols'] = $xmlSt['stat']['columns'];
-			$this->_auxTableData['maxrows'] = $xmlSt['stat']['rows'];
-			$this->_auxTableData['list']    = &$xmlSt['stat']['list'];
-			$out.= "\t\t<tr>\n";
-			$out.= "\t\t\t<th colspan=\"{$this->_auxTableData['maxcols']}\">".$this->translate($this->_xmlData->getName())."</th>\n";
-			$out.= "\t\t</tr>\n";
-			for($y=1; $y<=$this->_auxTableData['maxrows']; $y++) {
-				$out.= "\t\t<tr>\n";
-				for($x=1, $colSpan=$this->_auxTableData['maxcols']; $x<=$this->_auxTableData['maxcols']; $x++, $colSpan--) {
-					$id    = "{$y}-{$x}";
-					$value = $this->_auxTableData['list'][$y][$x];
-$out.="<h4>$id:{$value[1]}</h4>";
-/****************************************/
-					if(isset($this->_auxTableData['cells'][$id])) {
-						$cell = $this->_auxTableData['cells'][$id];
-						if(isset($cell['value'])) {
-							$out.= "\t\t\t<th rowspan=\"{$cell['rows']}\">{$cell['title']}</th>\n";
-							if($this->isEditable()) {
-								$out.= "\t\t\t<td colspan=\"".($colSpan-1)."\" id=\"item_".X2WParser::$_ParserId."_{$x}_{$y}\" onClick=\"X2WEditValue('{$this->_filename}','item_".X2WParser::$_ParserId."_{$x}_{$y}',".($this->debugEnabled()?'true':'false').");\">{$cell['value']}</td>\n";
-							} else {
-								$out.= "\t\t\t<td colspan=\"".($colSpan-1)."\">{$cell['value']}</td>\n";
-							}
-						} elseif(isset($cell['nochildren'])) {
-							$out.= "\t\t\t<td class=\"NoText\" colspan=\"2\" rowspan=\"{$cell['rows']}\">{$cell['title']}</td>\n";
-						} else {
-							$out.= "\t\t\t<th rowspan=\"{$cell['rows']}\">{$cell['title']}</th>\n";
-						}
-					}
-				}
-/****************************************/
-				$out.= "\t\t</tr>\n";
-			}
-$out.= '<pre>';
-ob_start();
-print_r($xmlSt);
-$out.=ob_get_contents();
-ob_end_clean();
-$out.= '</pre>';
-			
-			
-			
-			
-			$out.= "\t</table>\n";
-			$out.= "</div>\n";
-		} else {
-			$out = $this->getLastError();
-		}
-
-		return $out;
-	}
+	/**
+	 * @todo doc
+	 */
 	protected function showAsTable() {
 		$out = "";
 
@@ -556,35 +570,37 @@ $out.= '</pre>';
 			$out.= "\t<table class=\"{$this->_class}\">\n";
 
 			$this->loadXMLData();
-			$tree = $this->showAsTableChild($this->_xmlData);
-			$aux  = $this->showAsTableTreeDig($tree);
-			$this->_auxTableData['maxrows'] = $tree['rows'];
+			/*
+			 * Analysing XML structure and items.
+			 * @{
+			 */
+			$xmlSt = buildXMLStruct($this->_xmlData, null, null, true, true);
+			buildXMLStructSpan($xmlSt);
+			/* @} */
 			$out.= "\t\t<tr>\n";
-			$out.= "\t\t\t<th colspan=\"{$this->_auxTableData['maxcols']}\">".$this->translate($this->_xmlData->getName())."</th>\n";
+			$out.= "\t\t\t<th colspan=\"{$xmlSt['stat']['columns']}\">".$this->translate($this->_xmlData->getName())."</th>\n";
 			$out.= "\t\t</tr>\n";
-			for($y=1; $y<=$this->_auxTableData['maxrows']; $y++) {
+			for($y=1; $y<=$xmlSt['stat']['rows']; $y++) {
 				$out.= "\t\t<tr>\n";
-				for($x=1, $colSpan=$this->_auxTableData['maxcols']; $x<=$this->_auxTableData['maxcols']; $x++, $colSpan--) {
-					$id     = "{$x}-{$y}";
-					if(isset($this->_auxTableData['cells'][$id])) {
-						$cell = $this->_auxTableData['cells'][$id];
-						if(isset($cell['value'])) {
-							$out.= "\t\t\t<th rowspan=\"{$cell['rows']}\">{$cell['title']}</th>\n";
+				for($x=1; $x<=$xmlSt['stat']['columns']; $x++) {
+					if(isset($xmlSt['stat']['list'][$y][$x])) {
+						$id    = "{$y}-{$x}";
+						$value = $xmlSt['stat']['list'][$y][$x];
+						if(isset($value['tag'])) {
+							$text = $this->translate($value['tag']);
+							$out.= "\t\t\t<th colspan=\"{$value['colspan']}\" rowspan=\"{$value['rowspan']}\">{$text}</th>\n";
+						} elseif(isset($value['text'])) {
 							if($this->isEditable()) {
-								$out.= "\t\t\t<td colspan=\"".($colSpan-1)."\" id=\"item_".X2WParser::$_ParserId."_{$x}_{$y}\" onClick=\"X2WEditValue('{$this->_filename}','item_".X2WParser::$_ParserId."_{$x}_{$y}',".($this->debugEnabled()?'true':'false').");\">{$cell['value']}</td>\n";
+								$itemId = "item_".X2WParser::$_ParserId."_{$x}_{$y}";
+								$out.= "\t\t\t<td class=\"Editable\" colspan=\"{$value['colspan']}\" rowspan=\"{$value['rowspan']}\" id=\"{$itemId}\" onKeyDown=\"X2WKeyDown()/*X2WKeyDown('{$itemId}')*/\" onClick=\"X2WEditValue('{$this->_filename}','{$itemId}',".($this->debugEnabled()?'true':'false').");\">{$value['text']}</td>\n";
 							} else {
-								$out.= "\t\t\t<td colspan=\"".($colSpan-1)."\">{$cell['value']}</td>\n";
+								$out.= "\t\t\t<td colspan=\"{$value['colspan']}\" rowspan=\"{$value['rowspan']}\">{$value['text']}</td>\n";
 							}
-						} elseif(isset($cell['nochildren'])) {
-							$out.= "\t\t\t<td class=\"NoText\" colspan=\"2\" rowspan=\"{$cell['rows']}\">{$cell['title']}</td>\n";
-						} else {
-							$out.= "\t\t\t<th rowspan=\"{$cell['rows']}\">{$cell['title']}</th>\n";
 						}
 					}
 				}
 				$out.= "\t\t</tr>\n";
 			}
-
 			$out.= "\t</table>\n";
 			$out.= "</div>\n";
 		} else {
@@ -593,85 +609,11 @@ $out.= '</pre>';
 
 		return $out;
 	}
-	protected function showAsTableChild(&$child, $level=1, $space="\t\t") {
-		$tree = array(
-				'level' => $level,
-				'space' => $space,
-				'title' => $this->translate($child->getName())
-		);
-		if(count($child->children())) {
-			foreach($child->children() as $c) {
-				$aux = $this->showAsTableChild($c, $level+1, $space."\t");
-				$tree[] = $aux;
-			}
-		} else {
-			$value  = "{$child}";
-			if($value) {
-				$tree[] = $value;
-			}
-		}
-
-		return $tree;
-	}
-	protected function showAsTableTreeDig(&$tree, $maxcols=0, &$x=0, &$y=1) {
-		$maxcols++;
-		if($this->_auxTableData['maxcols'] < $maxcols) {
-			$this->_auxTableData['maxcols'] = $maxcols;
-		}
-
-		$tree['x'] = $x;
-		$tree['y'] = $y;
-		$cellId    = "{$tree['x']}-{$tree['y']}";
-		$this->_auxTableData['cells'][$cellId] = array();
-
-		$cols        = 0;
-		$rows        = 0;
-		$hasNumerics = false;
-		foreach($tree as $k => $c) {
-			if(is_numeric($k)) {
-				$rows++;
-				$hasNumerics = true;
-				if(is_array($c)) {
-					$x++;
-					$r = $this->showAsTableTreeDig($c, $maxcols, $x, $y);
-					$y++;
-					$x--;
-					$tree[$k] = $c;
-
-					if($r > 1) {
-						/*
-						 * bug-fix
-						 * @url https://code.google.com/p/xml2wiki-dr/issues/detail?id=1
-						 */
-						$rows+=$r;
-					}
-				}
-			}
-		}
-		if(!$hasNumerics) {
-			$cols = 2;
-			$rows = 1;
-			$y--;
-			$tree['nochildren'] = 'NOCHILDREN';
-			$this->_auxTableData['cells'][$cellId]['nochildren'] = 'NOCHILDREN';
-		} else {
-			if(!is_array($tree[0])) {
-				$this->_auxTableData['cells'][$cellId]['value'] = "{$tree[0]}";
-			}
-			$cols = 1;
-		}
-		$tree['cols'] = $cols;
-		$tree['rows'] = $rows;
-
-		$this->_auxTableData['cells'][$cellId]['title'] = $tree['title'];
-		$this->_auxTableData['cells'][$cellId]['cols']  = $tree['cols'];
-		$this->_auxTableData['cells'][$cellId]['rows']  = $tree['rows'];
-		$this->_auxTableData['cells'][$cellId]['level'] = $tree['level'];
-		$this->_auxTableData['cells'][$cellId]['space'] = $tree['space'];
-
-		return $rows;
-	}
-
+	/**
+	 * @todo doc
+	 * @param string $name @todo doc
+	 * @param boolean $isAttr @todo doc
+	 */
 	protected function translate($name, $isAttr=false) {
 		$out = $name;
 		if($isAttr) {
@@ -683,6 +625,72 @@ $out.= '</pre>';
 				$out = $this->_translations['tags'][$name];
 			}
 		}
+		return $out;
+	}
+
+	/*
+	 * Public class methods.
+	 */
+	public static function AjaxParser($params) {
+		$out = '';
+
+		global	$wgXML2WikiConfig;
+		Xml2Wiki::Instance();
+
+		$params   = explode($wgXML2WikiConfig['ajaxseparator'], $params);
+		$xml      = $params[0];
+		$value    = $params[1];
+		$oldValue = $params[2];
+		$position = $params[3];
+		$debug    = $params[4];
+
+		$out = $oldValue;
+
+		if($value != $oldValue) {
+			$conf = array(
+				'file'	=> $xml,
+				'debug'	=> $debug,
+			);
+			/*
+			 *	- class
+			 *	- file
+			 *	- translator
+			 *	- style
+			 *	- showattrs
+			 *	- class
+			 *	- debug
+			 */
+			$x2wParser = new X2WParser();
+			$x2wParser->setLastError();
+			$x2wParser->loadFromList($conf);
+			if($x2wParser->getLastError()) {
+				if($x2wParser->debugEnabled()) {
+					$out = $x2wParser->getLastError().'<br/>'.$oldValue;
+				} else {
+					$out = $oldValue;
+				}
+			} else {
+				$conf['full_path'] = $x2wParser->getFilePath($xml);
+
+				$x2wParser->loadXMLData();
+				/*
+				 * Analysing XML structure and items.
+				 * @{
+				 */
+				$aux        = explode("_", $position);
+				$xyPosition = array(
+				'x' => $aux[2],  
+				'y' => $aux[3],  
+				);
+				$xmlSt = buildXMLStruct($x2wParser->_xmlData, $xyPosition, $value, false);
+				if(!$x2wParser->_xmlData->asXML($conf['full_path'])) {
+					$out = $x2wParser->formatErrorMessage(wfMsg('forbbideneditfile', $conf['file'])).'<br/>'.$oldValue;
+				} else {
+					$out = $value;
+				}
+			}
+		}
+
 		return $out;
 	}
 }

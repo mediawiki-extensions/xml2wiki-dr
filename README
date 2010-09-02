@@ -1,5 +1,5 @@
 Installation:
-	If you want to install this extension, follow these spteps:
+	If you want to install this extension, follow these steps:
 		* First, download the extension from http://code.google.com/p/xml2wiki-dr/downloads/list. This will give you a tar.gz file.
 		* Second, extract the tar.gz file inside you mediawiki extensions directory. This will create a folder called xml2wiki-dr.
 		* Third, add this line at the end of you LocalSettings.php file:
