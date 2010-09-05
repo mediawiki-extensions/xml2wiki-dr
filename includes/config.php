@@ -26,14 +26,19 @@ if(!isset($wgXML2WikiConfig)) {
  * Allowed Directories.
  * @{
  */
-$wgXML2WikiAllowedPaths[]  = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR.'xmls';
-$wgXML2WikiEditablePaths[] = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR.'xmls';
+$wgXML2WikiAllowedPaths[]  = $wgXML2WikiExtensionSysDir.DIRECTORY_SEPARATOR.'xmls';
+$wgXML2WikiEditablePaths[] = $wgXML2WikiExtensionSysDir.DIRECTORY_SEPARATOR.'xmls';
 /** @} */
 
 /**
  * Configuration.
  * @{
  */
+/**
+ * Allows to enable/disable internal CSS-file inclution.
+ * @var boolean
+ */
+$wgXML2WikiConfig['autocss']	= true;
 /**
  * Information
  *	@{

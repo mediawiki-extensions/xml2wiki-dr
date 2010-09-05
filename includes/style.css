@@ -1,0 +1,63 @@
+/**
+ * @file style.css
+ *
+ * Subversion
+ *	- ID:  $Id$
+ *	- URL: $URL$
+ *
+ * @copyright 2010 Alejandro Darío Simi
+ * @license GPL
+ * @author Alejandro Darío Simi
+ * @date 2010-09-04
+ */
+@CHARSET "UTF-8";
+
+/**
+* xml2wiki-dr Extension
+* @{
+*/
+div.Xml2Wiki_code {
+	background-color:	#efefef;
+	border:			1px solid #aad;
+	border-left:		10px solid #aad;
+	margin:			0px 0px 0px 0px;
+	padding:		2px 2px 2px 2px;
+}
+div.Xml2Wiki_direct {
+	font-size:	small;
+	font-style:	italic;
+}
+div.Xml2Wiki_pre {
+	background-color:	#efefef;
+	border:			1px solid #aad;
+	border-left:		10px solid #aad;
+	margin:			0px 0px 0px 0px;
+	padding:		2px 2px 2px 2px;
+}
+div.Xml2Wiki_pre pre {
+	background:	transparent;
+	border:		none;
+	margin:		0px 0px 0px 0px;
+	padding:	0px 0px 0px 0px;
+}
+div.Xml2Wiki_list {
+}
+div.Xml2Wiki_list span.MainItem {
+	font-weight:	bold;
+}
+div.Xml2Wiki_list span.ItemName {
+	font-weight:	bold;
+}
+div.Xml2Wiki_list span.ItemValue {
+	font-style:	italic;
+}
+div.Xml2Wiki_table {
+}
+div.Xml2Wiki_table td.NoText {
+	font-weight:	bold;
+	text-align:	center;
+}
+div.Xml2Wiki_table td.Editable {
+	cursor:	pointer;
+}
+/** @} */
