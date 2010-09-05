@@ -102,10 +102,10 @@ class X2WParser {
 		if(!$this->_isEditableChecked) {
 			$this->_isEditable        = false;
 			$this->_isEditableChecked = true;
-			if($this->_editableFlaged) {
+			if($this->_editableFlaged && $this->_x2wInstance->checkEditablePath($this->_filepath)) {
 				global	$wgUseAjax;
 				global	$wgRequest;
- 
+
 				$action = $wgRequest->getVal('action', 'view');
 				if(!in_array($action,array('edit','ajax','submit')) && $wgUseAjax) {
 					global	$wgUser;
@@ -152,7 +152,6 @@ class X2WParser {
 			 * Cheking if it is editable.
 			 * @{
 			 */
-			$this->_isEditable = $this->_x2wInstance->checkEditablePath($this->_filepath);
 			$out.=$this->formatDebugMessage("XML is ".($this->isEditable()?'':'not ')."editable");
 			/* @} */
 

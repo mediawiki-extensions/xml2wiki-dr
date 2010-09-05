@@ -1,9 +1,11 @@
 Version 0.3:
 	* New Engine for style 'table'.
 	* Dynamic editon through Ajax for style 'table'.
+		** Adding configuration to allow editable paths using the same concept than AllowPaths (check $wgXML2WikiEditablePaths).
 	* Debugging messages.
 	* New Magic word #x2w with comands:
 		** {{#x2w:nocache}}: to disable page caching.
 		** {{#x2w:debug|...}}: to enable/disable debug information.
 		** {{#x2w:load|id|path}}: to load a xml-file with cetain id.
 		** {{#x2w:value|id|...}}: to extract a value from a xml-file.
+	* Internal stylesheet.

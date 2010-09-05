@@ -12,9 +12,9 @@
  * @date 2010-07-06
  */
 
-require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'config.php');
-require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'X2WAllowedPaths.php');
-require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'X2WParser.php');
+require_once($wgXML2WikiExtensionSysDir.DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'config.php');
+require_once($wgXML2WikiExtensionSysDir.DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'X2WAllowedPaths.php');
+require_once($wgXML2WikiExtensionSysDir.DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'X2WParser.php');
 
 /**
  * @todo doc
@@ -103,6 +103,7 @@ class Xml2Wiki extends SpecialPage {
 		global	$wgXML2WikiAllowedPaths;
 		global	$wgXML2WikiEditablePaths;
 		global	$wgXML2WikiConfig;
+		global	$wgXML2WikiExtensionSysDir;
 
 		$this->_lastError     = '';
 		$this->_debugEnabled  = false;
@@ -113,7 +114,7 @@ class Xml2Wiki extends SpecialPage {
 		/*
 		 * Getting current directory.
 		 */
-		$this->_localDirectory = dirname(__FILE__);
+		$this->_localDirectory = $wgXML2WikiExtensionSysDir;
 
 		/*
 		 * Loading messages.
@@ -288,6 +289,7 @@ class Xml2Wiki extends SpecialPage {
 		global	$wgGroupPermissions;
 		global	$wgDBtype;
 		global	$wgAllowExternalImages;
+		global	$wgXML2WikiExtensionSysDir;
 
 		$tags   = $wgParser->getTags();
 		$mwords = $wgParser->getFunctionHooks();
@@ -311,7 +313,7 @@ class Xml2Wiki extends SpecialPage {
 		$out.= "\t\t\t</ul></li>\n";
 		$out.= "\t\t\t<li><strong>".wfMsg('sinfo-url').":</strong> ".Xml2Wiki::Property('url')."</li>\n";
 		if($wgXML2WikiConfig['showinstalldir']) {
-			$out.= "\t\t\t<li><strong>".wfMsg('sinfo-installation-directory').":</strong> ".dirname(__FILE__)."</li>\n";
+			$out.= "\t\t\t<li><strong>".wfMsg('sinfo-installation-directory').":</strong> {$wgXML2WikiExtensionSysDir}</li>\n";
 		}
 		$out.= "\t\t\t<li><strong>".wfMsg('sinfo-svn').":</strong><ul>\n";
 		$aux = str_replace('$', '', Xml2Wiki::Property('svn-revision'));
@@ -342,6 +344,9 @@ class Xml2Wiki extends SpecialPage {
 		$out.= "\t\t\t</tr><tr>\n";
 		$out.= "\t\t\t\t<th style=\"text-align:left;\">".wfMsg('sinfo-useajax')."</th>\n";
 		$out.= "\t\t\t\t<td>".($wgUseAjax?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
+		$out.= "\t\t\t</tr><tr>\n";
+		$out.= "\t\t\t\t<th style=\"text-align:left;\">".wfMsg('sinfo-internal-css')."</th>\n";
+		$out.= "\t\t\t\t<td>".($wgXML2WikiConfig['autocss']?wfMsg('enabled'):wfMsg('disabled'))."</td>\n";
 		$out.= "\t\t\t</tr>\n";
 		$out.= "\t\t</table>\n";
 		/* @} */

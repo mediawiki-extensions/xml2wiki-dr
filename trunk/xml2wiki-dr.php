@@ -11,10 +11,12 @@
  * @author Alejandro Darío Simi
  * @date 2010-07-06
  */
+$wgXML2WikiExtensionSysDir = dirname(__FILE__);
+$wgXML2WikiExtensionWebDir = $wgScriptPath.'/extensions/'.basename(dirname(__FILE__));
 
-require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'config.php');
-require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'tools.php');
-require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'xml2wiki-dr.body.php');
+require_once($wgXML2WikiExtensionSysDir.DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'config.php');
+require_once($wgXML2WikiExtensionSysDir.DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR.'tools.php');
+require_once($wgXML2WikiExtensionSysDir.DIRECTORY_SEPARATOR.'xml2wiki-dr.body.php');
 
 /**
  * Register function.
@@ -25,11 +27,20 @@ function Xml2Wiki_Hooker() {
 function Xml2Wiki_HeadHooker(&$out, &$sk) {
 	global	$wgScriptPath;
 	global	$wgUseAjax;
-
+	global	$wgXML2WikiConfig;
+	global	$wgXML2WikiExtensionWebDir;
+	
 	if($wgUseAjax) {
-		$script = $wgScriptPath.'/extensions/'.basename(dirname(__FILE__)).'/includes/xml2wiki.js.php';
+		$script = $wgXML2WikiExtensionWebDir.'/includes/xml2wiki.js.php';
 		$out->addScript('<script type="text/javascript" src="'.$script.'"></script>');
 	}
+
+	if($wgXML2WikiConfig['autocss']) {
+	
+		$script = $wgXML2WikiExtensionWebDir.'/includes/style.css';
+		$out->addScript('<link type="text/css" rel="stylesheet" href="'.$script.'"/>');
+	}
+	
 	return true;
 }
 
