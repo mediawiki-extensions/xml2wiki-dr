@@ -15,7 +15,7 @@ require_once(dirname(__FILE__).DIRECTORY_SEPARATOR.'config.php');
 ?>
 var	X2WEDITING_ID = false;
 
-function X2WEditValue(url, id, debug) {
+function X2WEditValue(url, id, article, debug) {
 	X2WEDITING_ID = id;
 	/*
 	 * Getting item to process.
@@ -53,12 +53,12 @@ function X2WEditValue(url, id, debug) {
 	input.setAttribute('style', 'width:'+itemWidth+'px;');
 	item.appendChild(input);
 	input.onblur = function() {
-		X2WEditedValue(url, id, debug);
+		X2WEditedValue(url, id, article, debug);
 	}
 	input.onkeydown = X2WKeyDown;
 	input.focus();
 }
-function X2WEditedValue(url, id, debug) {
+function X2WEditedValue(url, id, article, debug) {
 	/*
 	 * Getting item to process.
 	 */
@@ -75,6 +75,7 @@ function X2WEditedValue(url, id, debug) {
 						itemContent+'<?php echo($wgXML2WikiConfig['ajaxseparator']); ?>'+
 						itemOldContent+'<?php echo($wgXML2WikiConfig['ajaxseparator']); ?>'+
 						id+'<?php echo($wgXML2WikiConfig['ajaxseparator']); ?>'+
+						article+'<?php echo($wgXML2WikiConfig['ajaxseparator']); ?>'+
 						(debug?'on':'off')], item);
 	/*
 	 * Clearing item.
@@ -93,7 +94,7 @@ function X2WEditedValue(url, id, debug) {
 	 * Restoring onClick event.
 	 */
 	item.onclick = function() {
-		X2WEditValue(url, id, debug);
+		X2WEditValue(url, id, article, debug);
 	}
 	
 	X2WEDITING_ID = false;
