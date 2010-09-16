@@ -63,9 +63,12 @@ class X2WParser {
 	 */
 	protected	$_style;
 	/**
-	 * @var ArrayObject
+	 * @var array
 	 */
 	protected	$_translations;
+	/**
+	 * @var string
+	 */
 	protected	$_translator;
 	/**
 	 * @var SimpleXMLElement
@@ -91,12 +94,14 @@ class X2WParser {
 	 */
 	/**
 	 * @todo doc
+	 * @return @todo doc
 	 */
 	public function debugEnabled() {
 		return ($this->_x2wInstance->debugEnabled() || $this->_localDebugEnabled);
 	}
 	/**
 	 * @todo doc
+	 * @return @todo doc
 	 */
 	public function isEditable() {
 		if(!$this->_isEditableChecked) {
@@ -106,8 +111,9 @@ class X2WParser {
 				global	$wgUseAjax;
 				global	$wgRequest;
 
-				$action = $wgRequest->getVal('action', 'view');
-				if(!in_array($action,array('edit','ajax','submit')) && $wgUseAjax) {
+				//$action = $wgRequest->getVal('action', 'view');
+				//if(!in_array($action,array('edit','ajax','submit')) && $wgUseAjax) {
+				if($wgUseAjax) {
 					global	$wgUser;
 					$this->_isEditable = in_array('x2w-tableedit', $wgUser->getRights());
 				}
@@ -118,6 +124,7 @@ class X2WParser {
 	}
 	/**
 	 * @todo doc
+	 * @return @todo doc
 	 */
 	public function load() {
 		/*
@@ -191,9 +198,10 @@ class X2WParser {
 	}
 	/**
 	 *  @todo doc
-	 *  @param array $conf @todo doc
+	 *  @param $conf @todo doc
+	 *  @return @todo doc
 	 */
-	public function loadFromList($conf) {
+	public function loadFromList(array $conf) {
 		/*
 		 * Clearing status.
 		 */
@@ -221,11 +229,12 @@ class X2WParser {
 	}
 	/**
 	 * @todo doc
-	 * @param string $input @todo doc
-	 * @param array $params @todo doc
-	 * @param Parser $parser @todo doc
+	 * @param $input @todo doc
+	 * @param $params @todo doc
+	 * @param $parser @todo doc
+	 * @return @todo doc
 	 */
-	public function loadFromTags($input, $params, $parser) {
+	public function loadFromTags($input, array $params, $parser) {
 		/*
 		 * Clearing status.
 		 */
@@ -240,7 +249,8 @@ class X2WParser {
 	}
 	/**
 	 * @todo doc
-	 * @param string $cmd @todo doc
+	 * @param $cmd @todo doc
+	 * @return @todo doc
 	 */
 	public function runCommand($cmd) {
 		$out = '';
@@ -252,6 +262,7 @@ class X2WParser {
 	}
 	/**
 	 * @todo doc
+	 * @return @todo doc
 	 */
 	public function show() {
 		/*
@@ -293,6 +304,7 @@ class X2WParser {
 	 */
 	/**
 	 * @todo doc
+	 * @return @todo doc
 	 */
 	protected function checkSimpleXML() {
 		return $this->_x2wInstance->checkSimpleXML();
@@ -325,27 +337,31 @@ class X2WParser {
 	}
 	/**
 	 * @todo doc
-	 * @param string $msg @todo doc
+	 * @param $msg @todo doc
+	 * @return @todo doc
 	 */
 	protected function formatDebugMessage($msg) {
 		return $this->_x2wInstance->formatDebugMessage($msg, $this->_localDebugEnabled);
 	}
 	/**
 	 * @todo doc
-	 * @param string $msg @todo doc
+	 * @param $msg @todo doc
+	 * @return @todo doc
 	 */
 	protected function formatErrorMessage($msg) {
 		return $this->_x2wInstance->formatErrorMessage($msg);
 	}
 	/**
 	 * @todo doc
-	 * @param string $filename @todo doc
+	 * @param $filename @todo doc
+	 * @return @todo doc
 	 */
 	protected function getFilePath($filename) {
 		return $this->_x2wInstance->getFilePath($filename);
 	}
 	/**
 	 * @todo doc
+	 * @return @todo doc
 	 */
 	protected function getLastError() {
 		return $this->_x2wInstance->getLastError();
@@ -354,6 +370,10 @@ class X2WParser {
 	 * Return parameters from mediaWiki;
 	 *	use Default if parameter not provided;
 	 *	use '' or 0 if Default not provided
+	 * @param $input @todo doc
+	 * @param $name @todo doc
+	 * @param $isNumber @todo doc
+	 * @return @todo doc
 	 */
 	protected function getVariable($input, $name, $isNumber=false) {
 		if($this->_x2wInstance->varDefault($name)) {
@@ -374,7 +394,8 @@ class X2WParser {
 	}
 	/**
 	 * @todo doc
-	 * @param string $filepath @todo doc
+	 * @param $filepath @todo doc
+	 * @return @todo doc
 	 */
 	protected function loadTranslations($filepath) {
 		$out = "";
@@ -414,7 +435,7 @@ class X2WParser {
 	}
 	/**
 	 * This method tries to load all the useful information set between tags
-	 * <xml2wiki> and </xml2wiki>.
+	 * &lt;xml2wiki&gt; and &lt;/xml2wiki&gt;.
 	 * @param $input Configuration text to be analyzed.
 	 */
 	protected function loadVariables($input) {
@@ -442,13 +463,15 @@ class X2WParser {
 	}
 	/**
 	 * @todo doc
-	 * @param string $msg @todo doc
+	 * @param $msg @todo doc
+	 * @return @todo doc
 	 */
 	protected function setLastError($msg="") {
 		return $this->_x2wInstance->setLastError($msg);
 	}
 	/**
 	 * @todo doc
+	 * @return @todo doc
 	 */
 	protected function showAsCode() {
 		$out = '';
@@ -475,12 +498,14 @@ class X2WParser {
 	}
 	/**
 	 * @todo doc
+	 * @return @todo doc
 	 */
 	protected function showAsDirect() {
 		return "<div class=\"Xml2Wiki_direct\">".htmlspecialchars($this->_data)."</div>";
 	}
 	/**
 	 * @todo doc
+	 * @return @todo doc
 	 */
 	protected function showAsList() {
 		$out = "";
@@ -508,9 +533,10 @@ class X2WParser {
 	}
 	/**
 	 * @todo doc
-	 * @param unknown_type $child @todo doc
-	 * @param integer $level @todo doc
-	 * @param string $space @todo doc
+	 * @param $child @todo doc
+	 * @param $level @todo doc
+	 * @param $space @todo doc
+	 * @return @todo doc
 	 */
 	protected function showAsListChild(&$child, $level=1, $space="\t\t") {
 		$out = "";
@@ -551,17 +577,20 @@ class X2WParser {
 	}
 	/**
 	 * @todo doc
+	 * @return @todo doc
 	 */
 	protected function showAsPre() {
 		return "<div class=\"Xml2Wiki_pre\"><pre>".htmlspecialchars($this->_data)."</pre></div>";
 	}
 	/**
 	 * @todo doc
+	 * @return @todo doc
 	 */
 	protected function showAsTable() {
 		$out = "";
 
 		global	$wgUseAjax;
+		global	$wgTitle;
 
 		$this->setLastError();
 		if($this->checkSimpleXML()) {
@@ -591,7 +620,7 @@ class X2WParser {
 						} elseif(isset($value['text'])) {
 							if($this->isEditable()) {
 								$itemId = "item_".X2WParser::$_ParserId."_{$x}_{$y}";
-								$out.= "\t\t\t<td class=\"Editable\" colspan=\"{$value['colspan']}\" rowspan=\"{$value['rowspan']}\" id=\"{$itemId}\" onKeyDown=\"X2WKeyDown()/*X2WKeyDown('{$itemId}')*/\" onClick=\"X2WEditValue('{$this->_filename}','{$itemId}',".($this->debugEnabled()?'true':'false').");\">{$value['text']}</td>\n";
+								$out.= "\t\t\t<td class=\"Editable\" colspan=\"{$value['colspan']}\" rowspan=\"{$value['rowspan']}\" id=\"{$itemId}\" onKeyDown=\"X2WKeyDown()/*X2WKeyDown('{$itemId}')*/\" onClick=\"X2WEditValue('{$this->_filename}','{$itemId}','".$wgTitle->getArticleID()."',".($this->debugEnabled()?'true':'false').");\">{$value['text']}</td>\n";
 							} else {
 								$out.= "\t\t\t<td colspan=\"{$value['colspan']}\" rowspan=\"{$value['rowspan']}\">{$value['text']}</td>\n";
 							}
@@ -610,8 +639,9 @@ class X2WParser {
 	}
 	/**
 	 * @todo doc
-	 * @param string $name @todo doc
-	 * @param boolean $isAttr @todo doc
+	 * @param $name @todo doc
+	 * @param $isAttr @todo doc
+	 * @return @todo doc
 	 */
 	protected function translate($name, $isAttr=false) {
 		$out = $name;
@@ -630,18 +660,24 @@ class X2WParser {
 	/*
 	 * Public class methods.
 	 */
+	/**
+	 * @todo doc
+	 * @param $params @todo doc
+	 * @return @todo doc
+	 */
 	public static function AjaxParser($params) {
 		$out = '';
 
 		global	$wgXML2WikiConfig;
 		Xml2Wiki::Instance();
 
-		$params   = explode($wgXML2WikiConfig['ajaxseparator'], $params);
-		$xml      = $params[0];
-		$value    = $params[1];
-		$oldValue = $params[2];
-		$position = $params[3];
-		$debug    = $params[4];
+		$params    = explode($wgXML2WikiConfig['ajaxseparator'], $params);
+		$xml       = $params[0];
+		$value     = $params[1];
+		$oldValue  = $params[2];
+		$position  = $params[3];
+		$articleID = $params[4];
+		$debug     = $params[5];
 
 		$out = $oldValue;
 
@@ -678,13 +714,23 @@ class X2WParser {
 				 */
 				$aux        = explode("_", $position);
 				$xyPosition = array(
-				'x' => $aux[2],  
-				'y' => $aux[3],  
+					'x' => $aux[2],  
+					'y' => $aux[3],  
 				);
 				$xmlSt = buildXMLStruct($x2wParser->_xmlData, $xyPosition, $value, false);
 				if(!$x2wParser->_xmlData->asXML($conf['full_path'])) {
 					$out = $x2wParser->formatErrorMessage(wfMsg('forbbideneditfile', $conf['file'])).'<br/>'.$oldValue;
 				} else {
+					/*
+					 * GhostBuster's Code: This piece of code
+					 * avoids some unpleasant results when
+					 * cache is enabled.
+					 * @{
+					 */
+					$title = Title::newFromID($articleID, GAID_FOR_UPDATE);
+					$title->invalidateCache();
+					/* @} */
+
 					$out = $value;
 				}
 			}

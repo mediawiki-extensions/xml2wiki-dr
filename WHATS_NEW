@@ -1,3 +1,7 @@
+Version 0.4:
+	* Special:Xml2Wiki works completely with wiki-text.
+	* Table style reset cache when edit.
+
 Version 0.3:
 	* New Engine for style 'table'.
 	* Dynamic editon through Ajax for style 'table'.
