@@ -18,8 +18,9 @@ require_once($wgXML2WikiExtensionSysDir.DIRECTORY_SEPARATOR.'includes'.DIRECTORY
 
 /**
  * @todo doc
- * @param unknown_type $magicWords
- * @param unknown_type $langCode
+ * @param $magicWords
+ * @param $langCode
+ * @return @todo doc
  */
 function wfXml2WikiLanguageGetMagic(&$magicWords, $langCode="en") {
 	switch($langCode) {
@@ -31,6 +32,7 @@ function wfXml2WikiLanguageGetMagic(&$magicWords, $langCode="en") {
 
 /**
  * @class Xml2Wiki
+ * @todo doc
  */
 class Xml2Wiki extends SpecialPage {
 	/**
@@ -137,6 +139,10 @@ class Xml2Wiki extends SpecialPage {
 			}
 		}
 	}
+
+	/*
+	 * Public Methods
+	 */
 	/**
 	 * Checks allowed paths.
 	 * @param $path Path to check.
@@ -177,12 +183,14 @@ class Xml2Wiki extends SpecialPage {
 	}
 	/**
 	 * @todo doc
+	 * @return @todo doc
 	 */
 	public function debugEnabled() {
 		return $this->_debugEnabled;
 	}
 	/**
 	 * Inherited method. Please check parent class 'SpecialPage'.
+	 * @param $par
 	 */
 	public function execute($par) {
 		global	$wgRequest;
@@ -202,8 +210,9 @@ class Xml2Wiki extends SpecialPage {
 	}
 	/**
 	 * @todo doc
-	 * @param unknown_type $message @todo doc
-	 * @param unknown_type $force @todo doc
+	 * @param $message @todo doc
+	 * @param $force @todo doc
+	 * @return @todo doc
 	 */
 	public function formatDebugMessage($message, $force=false) {
 		if($this->debugEnabled() || $force) {
@@ -214,7 +223,8 @@ class Xml2Wiki extends SpecialPage {
 	}
 	/**
 	 * @todo doc
-	 * @param unknown_type $message @todo doc
+	 * @param $message @todo doc
+	 * @return @todo doc
 	 */
 	public function formatErrorMessage($message) {
 		return "<span style=\"color:red;font-weight:bold;\">".$this->ERROR_PREFIX."$message</span>";
@@ -224,7 +234,7 @@ class Xml2Wiki extends SpecialPage {
 	 * distinguish between a system file and a mediawiki file (this means
 	 * something like [[File:...]].
 	 * This method also checks if it's an allowed path or not.
-	 * @param string $in File path.
+	 * @param $in File path.
 	 * @return Returns a full-path. On error, return an empty string and
 	 * sets the proper error message.
 	 */
@@ -595,9 +605,12 @@ class Xml2Wiki extends SpecialPage {
 	}
 	/**
 	 * @todo doc.
-	 * @{
+	 * @param $parser @todo doc
+	 * @param $frame @todo doc
+	 * @param $args @todo doc
+	 * @return @todo doc
 	 */
-	public function parseMasterTag(&$parser, $frame, $args) {
+	public function parseMasterTag(&$parser, $frame, array $args) {
 		/*
 		 * This variable will hold the content to be retorned. Eighter
 		 * some formatted XML text or an error message.
@@ -625,13 +638,16 @@ class Xml2Wiki extends SpecialPage {
 
 		return $out;
 	}
-	/** @} */
 	/**
 	 * Tag Interpreter.
 	 * This method is in charge of analyzing and generating the output
-	 * content for tags <xml2wiki> and </xml2wiki>.
+	 * content for tags &lt;xml2wiki&gt; and &lt;/xml2wiki&gt;.
+	 * @param $input @todo doc
+	 * @param $params @todo doc
+	 * @param $parser @todo doc
+	 * @return @todo doc
 	 */
-	public function parseSimpleTag($input, $params, $parser) {
+	public function parseSimpleTag($input, array $params, $parser) {
 		/*
 		 * This variable will hold the content to be retorned. Eighter
 		 * some formatted XML text or an error message.
@@ -647,12 +663,17 @@ class Xml2Wiki extends SpecialPage {
 
 		return $out;
 	}
+	/**
+	 * @todo doc
+	 * @param $enabled @todo doc
+	 * @return @todo doc
+	 */
 	public function setDebugEnabled($enabled=true) {
 		return $this->_debugEnabled = $enabled;
 	}
 	/**
 	 * Sets last error message.
-	 * @param string $msg Message to set.
+	 * @param $msg Message to set.
 	 * @return Returns the message set.
 	 */
 	public function setLastError($msg="") {
@@ -661,13 +682,24 @@ class Xml2Wiki extends SpecialPage {
 	}
 	/**
 	 * @todo doc
-	 * @param unknown_type $name @todo doc
+	 * @param $name @todo doc
+	 * @return @todo doc
 	 */
 	public function varDefault($name) {
 		return (isset($this->_varDefaults[$name])?$this->_varDefaults[$name]:'');
 	}
 
-	protected function cmdDebug(&$parser, $frame, $args) {
+	/*
+	 * Protected Methods
+	 */
+	/**
+	 * @todo doc
+	 * @param $parser @todo doc
+	 * @param $frame @todo doc
+	 * @param $args @todo doc
+	 * @return @todo doc
+	 */
+	protected function cmdDebug(&$parser, $frame, array $args) {
 		$out = '';
 		$aux = trim(strtolower(isset($args[1])?$frame->expand($args[1]):''));
 		switch($aux) {
@@ -686,11 +718,12 @@ class Xml2Wiki extends SpecialPage {
 	}
 	/**
 	 * @todo doc
-	 * @param Parser $parser @todo doc
-	 * @param unknown_type $frame @todo doc
-	 * @param array $args @todo doc
+	 * @param $parser @todo doc
+	 * @param $frame @todo doc
+	 * @param $args @todo doc
+	 * @return @todo doc
 	 */
-	protected function cmdLoad(&$parser, $frame, $args) {
+	protected function cmdLoad(&$parser, $frame, array $args) {
 		$out = '';
 
 		$id    = trim(strtolower(isset($args[1])?$frame->expand($args[1]):''));
@@ -725,7 +758,14 @@ class Xml2Wiki extends SpecialPage {
 
 		return $out;
 	}
-	protected function cmdNoCache(&$parser, $frame, $args) {
+	/**
+	 * @todo doc
+	 * @param $parser @todo doc
+	 * @param $frame @todo doc
+	 * @param $args @todo doc
+	 * @return @todo doc
+	 */
+	protected function cmdNoCache(&$parser, $frame, array $args) {
 		$out = '';
 
 		global	$wgXML2WikiConfig;
@@ -739,7 +779,14 @@ class Xml2Wiki extends SpecialPage {
 
 		return $out;
 	}
-	protected function cmdValue(&$parser, $frame, $args) {
+	/**
+	 * @todo doc
+	 * @param $parser @todo doc
+	 * @param $frame @todo doc
+	 * @param $args @todo doc
+	 * @return @todo doc
+	 */
+	protected function cmdValue(&$parser, $frame, array $args) {
 		$out = '';
 
 		$id  = trim(strtolower(isset($args[1])?$frame->expand($args[1]):''));
@@ -754,6 +801,13 @@ class Xml2Wiki extends SpecialPage {
 		return $out;
 	}
 
+	/*
+	 * Public Class Methods
+	 */
+	/**
+	 * @todo doc
+	 * @return  @todo doc
+	 */
 	public static function Instance() {
 		if(!Xml2Wiki::$_Instance) {
 			Xml2Wiki::$_Instance = new Xml2Wiki();

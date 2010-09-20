@@ -12,7 +12,16 @@
  * @date 2010-08-26
  */
 
-function buildXMLStruct(&$xml, $find=null, $replace=null, $noelement=true, $list=false) {
+/**
+ * @todo doc
+ * @param $xml @todo doc
+ * @param $find @todo doc
+ * @param $replace @todo doc
+ * @param $noelement @todo doc
+ * @param $list @todo doc
+ * @return @todo doc
+ */
+function buildXMLStruct(&$xml, array $find=null, $replace=null, $noelement=true, $list=false) {
 	$auxSt = array(
 		'columns'	=> 0,
 		'rows'		=> 0,
@@ -37,6 +46,12 @@ function buildXMLStruct(&$xml, $find=null, $replace=null, $noelement=true, $list
 		'stat'	=> $auxSt
 	);
 }
+/**
+ * @todo doc
+ * @param $xml @todo doc
+ * @param $auxSt @todo doc
+ * @return @todo doc
+ */
 function buildStructDig(&$xml, &$auxSt) {
 	if(!isset($auxSt['found'])) {
 		/*
@@ -167,6 +182,10 @@ function buildStructDig(&$xml, &$auxSt) {
 		return null;
 	}
 }
+/**
+ * @todo doc
+ * @param $st @todo doc
+ */
 function buildXMLStructSpan(&$st) {
 	$cols = $st['stat']['columns'];
 	$rows = $st['stat']['rows'];
