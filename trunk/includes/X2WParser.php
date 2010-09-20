@@ -14,6 +14,7 @@
 
 /**
  * @class X2WParser
+ * @todo doc
  */
 class X2WParser {
 	/**
@@ -33,6 +34,9 @@ class X2WParser {
 	 * @var boolean
 	 */
 	protected	$_editableFlaged;
+	/**
+	 * @var string
+	 */
 	protected	$_class;
 	/**
 	 * @var string
@@ -107,6 +111,7 @@ class X2WParser {
 		if(!$this->_isEditableChecked) {
 			$this->_isEditable        = false;
 			$this->_isEditableChecked = true;
+
 			if($this->_editableFlaged && $this->_x2wInstance->checkEditablePath($this->_filepath)) {
 				global	$wgUseAjax;
 				global	$wgRequest;

@@ -14,11 +14,23 @@
 
 /**
  * @class X2WAllowedPaths
+ * @todo doc
  */
 class X2WAllowedPaths {
+	/**
+	 * @var boolean
+	 */
 	protected	$_isRecursive;
+	/**
+	 * @var array
+	 */
 	protected	$_paths;
 
+	/**
+	 * Constructor
+	 * @param $list @todo doc
+	 * @param $isRecursive @todo doc
+	 */
 	public function __construct(&$list=array(), $isRecursive=false) {
 		$this->_isRecursive = $isRecursive;
 		$this->_paths       = array(
@@ -30,6 +42,13 @@ class X2WAllowedPaths {
 		$this->addPaths($list);
 	}
 
+	/*
+	 * Public Methods
+	 */
+	/**
+	 * @todo doc
+	 * @param $list @todo doc
+	 */
 	public function addPaths(&$list) {
 		if(is_array($list)) {
 			foreach($list as $path) {
@@ -54,12 +73,11 @@ class X2WAllowedPaths {
 		sort($this->_paths['noaccess']);
 		sort($this->_paths['unknown']);
 	}
-	protected function addPathTo($path, &$list) {
-		if(!in_array($path, $list)) {
-			$list[] = $path;
-		}
-	}
-
+	/**
+	 * @todo doc
+	 * @param $path @todo doc
+	 * @return @todo doc
+	 */
 	public function check($path) {
 		$out = false;
 
@@ -87,21 +105,57 @@ class X2WAllowedPaths {
 
 		return $out;
 	}
-
+	/**
+	 * @return @todo doc
+	 */
 	public function directories() {
 		return $this->_paths['directories'];
 	}
+	/**
+	 * @return @todo doc
+	 */
 	public function files() {
 		return $this->_paths['files'];
 	}
+	/**
+	 * @return @todo doc
+	 */
 	public function noAccess() {
 		return $this->_paths['noaccess'];
 	}
+	/**
+	 * @return @todo doc
+	 */
 	public function unknown() {
 		return $this->_paths['unknown'];
 	}
 
+	/*
+	 * Protected Methods
+	 */
+	/**
+	 * @todo doc
+	 * @param $path @todo doc
+	 * @param $list @todo doc
+	 */
+	protected function addPathTo($path, &$list) {
+		if(!in_array($path, $list)) {
+			$list[] = $path;
+		}
+	}
+
+	/*
+	 * Public Class Method
+	 */
+	/**
+	 * @todo doc
+	 * @param $path @todo doc
+	 * @return @todo doc
+	 */
 	public static function cleanPath($path) {
+		$path = str_replace('/',  DIRECTORY_SEPARATOR, $path);
+		$path = str_replace('\\', DIRECTORY_SEPARATOR, $path);
+
 		while(strpos($path, DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR) !== false) {
 			$path = str_replace(DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR, $path);
 		}
