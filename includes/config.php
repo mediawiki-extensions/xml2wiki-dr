@@ -26,6 +26,7 @@ if(!isset($wgXML2WikiConfig)) {
  * Allowed Directories.
  * @{
  */
+global	$wgXML2WikiExtensionSysDir;
 $wgXML2WikiAllowedPaths[]  = $wgXML2WikiExtensionSysDir.DIRECTORY_SEPARATOR.'xmls';
 $wgXML2WikiEditablePaths[] = $wgXML2WikiExtensionSysDir.DIRECTORY_SEPARATOR.'xmls';
 /** @} */
@@ -43,11 +44,13 @@ $wgXML2WikiConfig['autocss']	= true;
  * Information
  *	@{
  */
-$wgXML2WikiConfig['showallowpaths']    = true;
-$wgXML2WikiConfig['showeditablepaths'] = true;
-$wgXML2WikiConfig['showinstalldir']    = true;
-$wgXML2WikiConfig['showsysinfo']       = true;
-$wgXML2WikiConfig['showmodules']       = true;
+$wgXML2WikiConfig['show']			= array();
+$wgXML2WikiConfig['show']['authorslogo']	= true;
+$wgXML2WikiConfig['show']['allowedpaths']	= true;
+$wgXML2WikiConfig['show']['editablepaths']	= true;
+$wgXML2WikiConfig['show']['installdir']		= true;
+$wgXML2WikiConfig['show']['sysinfo']		= true;
+$wgXML2WikiConfig['show']['modules']		= true;
 /**	@} */
 
 /**
