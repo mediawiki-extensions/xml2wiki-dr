@@ -1,0 +1,1 @@
+This is un extension for MediaWiki. It allows to import XML file in direffernt ways.
